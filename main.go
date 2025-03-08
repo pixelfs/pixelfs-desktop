@@ -84,7 +84,6 @@ func main() {
 		Title:                    "PixelFS",
 		Width:                    1200,
 		Height:                   768,
-		Frameless:                !isMacOS,
 		Menu:                     appMenu,
 		EnableDefaultContextMenu: true,
 		AssetServer:              &assetserver.Options{Assets: assets},

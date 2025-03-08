@@ -18,6 +18,7 @@ import { CiSettings } from 'react-icons/ci';
 import { useNavigate } from 'react-router-dom';
 import { isEmpty } from 'lodash-es';
 import { v1 } from '../../wailsjs/go/models';
+import { isMacOS, loadEnvironment } from '../utils/platform';
 import { GetUserInfo } from '../../wailsjs/go/services/UserService';
 import { GetLocalStorage, SetLocalStorage } from '../../wailsjs/go/services/LocalStorageService';
 import { LocationList } from '../components/LocationList';
@@ -70,6 +71,7 @@ export function HomePage() {
         return;
       }
 
+      await loadEnvironment();
       await StartWebsocketClient();
       await fetchData();
     };
@@ -123,7 +125,7 @@ export function HomePage() {
       <AppShell navbar={{ width: 300, breakpoint: 'sm', collapsed: { mobile: true } }} padding="md">
         <AppShell.Navbar p="md">
           <Flex direction="column" justify="space-between" h="100%">
-            <Box pt={20}>
+            <Box pt={isMacOS() ? 20 : 0}>
               <Group justify="space-between">
                 <Box>
                   <Text>{userInfo?.name}</Text>

@@ -17,6 +17,7 @@ import {
 import { isEmpty } from 'lodash-es';
 import { useEffect, useState } from 'react';
 import { FiMoreHorizontal } from 'react-icons/fi';
+import { isMacOS } from '../../utils/platform';
 import { GoCopy, GoFileDirectoryFill, GoMoveToEnd } from 'react-icons/go';
 import { FaRegFileAlt } from 'react-icons/fa';
 import { formatBytes } from 'bytes-formatter';
@@ -143,7 +144,7 @@ export function FileManager(props: { location: v1.Location; path: string; onChan
         }}
       />
 
-      <Group justify="space-between" mt={10} mb={10}>
+      <Group justify="space-between" mt={isMacOS() ? 10 : 0} mb={10}>
         <ActionIcon variant="default" size={25} ml={10} onClick={() => props.onChangePath('')}>
           <IoHomeOutline size={15} color={colorScheme === 'light' ? '#000000' : '#ffffff'} />
         </ActionIcon>

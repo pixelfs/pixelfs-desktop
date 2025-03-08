@@ -36,7 +36,7 @@ export function Copy(props: { opened: boolean }) {
   if (isEmpty(copyList)) {
     return (
       <Center mt={150}>
-        <Text size="lg">没复制任务</Text>
+        <Text size="lg">没有复制任务</Text>
       </Center>
     );
   }

@@ -40,7 +40,7 @@ export function Download(props: { opened: boolean }) {
   if (isEmpty(downloadList)) {
     return (
       <Center mt={150}>
-        <Text size="lg">没下载任务</Text>
+        <Text size="lg">没有下载任务</Text>
       </Center>
     );
   }
