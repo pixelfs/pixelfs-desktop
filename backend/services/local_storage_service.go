@@ -1,0 +1,88 @@
+package services
+
+import (
+	"context"
+	"os"
+	"path/filepath"
+	"sync"
+
+	"github.com/pixelfs/pixelfs/log"
+	"github.com/pixelfs/pixelfs/util"
+	"github.com/tidwall/gjson"
+	"github.com/tidwall/sjson"
+)
+
+type LocalStorageService struct {
+	ctx  context.Context
+	path string
+}
+
+var localStorage *LocalStorageService
+var onceLocalStorage sync.Once
+
+func LocalStorage() *LocalStorageService {
+	if localStorage == nil {
+		onceLocalStorage.Do(func() {
+			localStorage = &LocalStorageService{}
+		})
+	}
+
+	return localStorage
+}
+
+func (ls *LocalStorageService) Start(ctx context.Context) {
+	home, err := util.GetHomeDir()
+	if err != nil {
+		log.Fatal().Err(err).Msg("failed to get home dir")
+	}
+
+	ls.ctx = ctx
+	ls.path = filepath.Join(home, "application.storage")
+
+	if _, err = os.Stat(ls.path); err != nil {
+		if os.IsNotExist(err) {
+			if _, err := os.Create(ls.path); err != nil {
+				log.Fatal().Err(err).Msg("failed to create storage file")
+			}
+		} else {
+			log.Fatal().Err(err).Msg("failed to stat storage file")
+		}
+	}
+}
+
+func (ls *LocalStorageService) SetLocalStorage(path string, value any) error {
+	data, err := os.ReadFile(ls.path)
+	if err != nil {
+		return err
+	}
+
+	bytes, err := sjson.SetBytes(data, path, value)
+	if err != nil {
+		return err
+	}
+
+	return os.WriteFile(ls.path, bytes, 0o600)
+}
+
+func (ls *LocalStorageService) GetLocalStorage(path string) (any, error) {
+	data, err := os.ReadFile(ls.path)
+	if err != nil {
+		return nil, err
+	}
+
+	return gjson.GetBytes(data, path).Value(), nil
+}
+
+func (ls *LocalStorageService) DelLocalStorage(path string) error {
+	data, err := os.ReadFile(ls.path)
+	if err != nil {
+		return err
+	}
+
+	bytes, err := sjson.DeleteBytes(data, path)
+	if err != nil {
+		return err
+	}
+
+	return os.WriteFile(ls.path, bytes, 0o600)
+}

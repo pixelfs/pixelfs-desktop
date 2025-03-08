@@ -1,0 +1,115 @@
+import { isEmpty } from 'lodash-es';
+import { ActionIcon, Button, Center, Group, Loader, Table, Text, useMantineColorScheme } from '@mantine/core';
+import { useEffect, useState } from 'react';
+import { RiDeleteBinLine } from 'react-icons/ri';
+import { GrRefresh } from 'react-icons/gr';
+import { GetNodes, RemoveNode } from '../../../../wailsjs/go/services/NodeService';
+import { v1 } from '../../../../wailsjs/go/models';
+import { notifications } from '@mantine/notifications';
+
+export function Node(props: { opened: boolean }) {
+  const { colorScheme } = useMantineColorScheme();
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string>('');
+  const [nodeList, setNodeList] = useState<Array<v1.Node>>([]);
+
+  const fetchData = async () => {
+    try {
+      setError('');
+      setLoading(true);
+
+      setNodeList(await GetNodes());
+      setLoading(false);
+    } catch (error: any) {
+      setError(error);
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (props.opened) fetchData();
+  }, [props.opened]);
+
+  if (loading) {
+    return (
+      <Center mt={150}>
+        <Loader color="blue" />
+      </Center>
+    );
+  }
+
+  if (error) {
+    return (
+      <>
+        <Center mt={150}>
+          <Text color="red">{error}</Text>
+        </Center>
+
+        <Center mt={5}>
+          <Button variant="default" onClick={fetchData}>
+            重试
+          </Button>
+        </Center>
+      </>
+    );
+  }
+
+  if (isEmpty(nodeList)) {
+    return (
+      <Center mt={150}>
+        <Text size="lg">未找到节点</Text>
+      </Center>
+    );
+  }
+
+  return (
+    <>
+      <Group justify="end" mt={15}>
+        <ActionIcon variant="transparent" size={20} onClick={() => fetchData()}>
+          <GrRefresh size={15} color={colorScheme === 'light' ? '#000000' : '#ffffff'} />
+        </ActionIcon>
+      </Group>
+
+      <Table striped highlightOnHover withRowBorders={false}>
+        <Table.Thead>
+          <Table.Tr>
+            <Table.Th>ID</Table.Th>
+            <Table.Th>名称</Table.Th>
+            <Table.Th>状态</Table.Th>
+            <Table.Th />
+          </Table.Tr>
+        </Table.Thead>
+        <Table.Tbody>
+          {nodeList.map((node, _) => (
+            <Table.Tr key={node.id}>
+              <Table.Td>{node.id}</Table.Td>
+              <Table.Td>{node.name}</Table.Td>
+              <Table.Td>{node.status === 1 ? '在线' : '离线'}</Table.Td>
+              <Table.Td>
+                <ActionIcon
+                  variant="transparent"
+                  size={17}
+                  onClick={async () => {
+                    if (node.status === 1) {
+                      notifications.show({ color: 'red', message: '节点在线时无法删除' });
+                      return;
+                    }
+
+                    try {
+                      await RemoveNode(node.id!);
+                      fetchData();
+                    } catch (error: any) {
+                      if (error !== 'cancel') notifications.show({ color: 'red', message: error });
+                    }
+                  }}
+                >
+                  <RiDeleteBinLine color="red" />
+                </ActionIcon>
+              </Table.Td>
+            </Table.Tr>
+          ))}
+        </Table.Tbody>
+      </Table>
+    </>
+  );
+}
