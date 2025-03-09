@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/url"
@@ -15,15 +16,12 @@ import (
 	"github.com/pixelfs/pixelfs-desktop/backend/models"
 	"github.com/pixelfs/pixelfs/config"
 	pb "github.com/pixelfs/pixelfs/gen/pixelfs/v1"
-	"github.com/pixelfs/pixelfs/rpc/core"
 	"github.com/pixelfs/pixelfs/util"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 type FileService struct {
 	ctx context.Context
-	cfg *config.Config
-	rpc *core.GrpcV1Client
 }
 
 type downloadBlockResult struct {
@@ -45,14 +43,12 @@ func File() *FileService {
 	return file
 }
 
-func (f *FileService) Start(ctx context.Context, rpc *core.GrpcV1Client, cfg *config.Config) {
+func (f *FileService) Start(ctx context.Context) {
 	f.ctx = ctx
-	f.rpc = rpc
-	f.cfg = cfg
 }
 
 func (f *FileService) GetFileList(ctx *pb.FileContext) (*pb.FileListResponse, error) {
-	response, err := f.rpc.FileSystemService.List(
+	response, err := rpc.FileSystemService.List(
 		context.Background(),
 		connect.NewRequest(&pb.FileListRequest{
 			Context: ctx,
@@ -67,7 +63,7 @@ func (f *FileService) GetFileList(ctx *pb.FileContext) (*pb.FileListResponse, er
 }
 
 func (f *FileService) RemoveFile(ctx *pb.FileContext) error {
-	_, err := f.rpc.FileSystemService.Remove(
+	_, err := rpc.FileSystemService.Remove(
 		context.Background(),
 		connect.NewRequest(&pb.FileRemoveRequest{
 			Context:   ctx,
@@ -82,7 +78,7 @@ func (f *FileService) RemoveFile(ctx *pb.FileContext) error {
 }
 
 func (f *FileService) Mkdir(ctx *pb.FileContext) error {
-	_, err := f.rpc.FileSystemService.Mkdir(
+	_, err := rpc.FileSystemService.Mkdir(
 		context.Background(),
 		connect.NewRequest(&pb.FileMkdirRequest{
 			Context: ctx,
@@ -107,7 +103,7 @@ func (f *FileService) MoveFile(src *pb.FileContext, dest *pb.FileContext) error 
 			return
 		}
 
-		_, err := f.rpc.FileSystemService.Remove(
+		_, err := rpc.FileSystemService.Remove(
 			context.Background(),
 			connect.NewRequest(&pb.FileRemoveRequest{
 				Context:   src,
@@ -148,7 +144,7 @@ func (f *FileService) copyFile(src *pb.FileContext, dest *pb.FileContext) error 
 			return err
 		}
 
-		_, err := f.rpc.FileSystemService.Copy(
+		_, err := rpc.FileSystemService.Copy(
 			context.Background(),
 			connect.NewRequest(&pb.FileCopyRequest{
 				Src:  src,
@@ -168,7 +164,7 @@ func (f *FileService) copyFile(src *pb.FileContext, dest *pb.FileContext) error 
 		return err
 	}
 
-	stat, err := f.rpc.FileSystemService.Stat(
+	stat, err := rpc.FileSystemService.Stat(
 		context.Background(),
 		connect.NewRequest(&pb.FileStatRequest{
 			Context: src,
@@ -180,7 +176,7 @@ func (f *FileService) copyFile(src *pb.FileContext, dest *pb.FileContext) error 
 	}
 
 	if stat.Msg.File.Type == pb.FileType_DIR {
-		_, err = f.rpc.FileSystemService.Mkdir(
+		_, err = rpc.FileSystemService.Mkdir(
 			context.Background(),
 			connect.NewRequest(&pb.FileMkdirRequest{
 				Context: dest,
@@ -190,7 +186,7 @@ func (f *FileService) copyFile(src *pb.FileContext, dest *pb.FileContext) error 
 			return err
 		}
 
-		list, err := f.rpc.FileSystemService.List(
+		list, err := rpc.FileSystemService.List(
 			context.Background(),
 			connect.NewRequest(&pb.FileListRequest{
 				Context: src,
@@ -220,7 +216,7 @@ func (f *FileService) copyFile(src *pb.FileContext, dest *pb.FileContext) error 
 		return nil
 	}
 
-	locationRsp, err := f.rpc.LocationService.GetLocationByContext(
+	locationRsp, err := rpc.LocationService.GetLocationByContext(
 		context.Background(),
 		connect.NewRequest(&pb.GetLocationByContextRequest{
 			Context: src,
@@ -239,7 +235,7 @@ func (f *FileService) copyFile(src *pb.FileContext, dest *pb.FileContext) error 
 	for index := int64(0); index <= blockCount; index++ {
 		var read *connect.Response[pb.FileReadResponse]
 		for retries := 0; retries < 20; retries++ {
-			read, err = f.rpc.FileSystemService.Read(
+			read, err = rpc.FileSystemService.Read(
 				context.Background(),
 				connect.NewRequest(&pb.FileReadRequest{
 					Context:    src,
@@ -264,7 +260,7 @@ func (f *FileService) copyFile(src *pb.FileContext, dest *pb.FileContext) error 
 			return fmt.Errorf("block %d is still pending after retries", index)
 		}
 
-		_, err := f.rpc.FileSystemService.Write(
+		_, err := rpc.FileSystemService.Write(
 			context.Background(),
 			connect.NewRequest(&pb.FileWriteRequest{
 				Context:    dest,
@@ -300,18 +296,15 @@ func (f *FileService) DownloadFile(ctx *pb.FileContext) error {
 		return err
 	}
 
-	outputFilePath, err := runtime.SaveFileDialog(f.ctx, runtime.SaveDialogOptions{
+	outputFilePath, _ := runtime.SaveFileDialog(f.ctx, runtime.SaveDialogOptions{
 		Title:            "Download File",
 		DefaultDirectory: downloadPath,
 		DefaultFilename:  fileName,
 		ShowHiddenFiles:  true,
 	})
-	if err != nil {
-		return err
-	}
 
 	if outputFilePath == "" {
-		return nil
+		return errors.New("cancel")
 	}
 
 	downloadThreads, err := preferences.GetDownloadThreads()
@@ -333,7 +326,7 @@ func (f *FileService) DownloadFile(ctx *pb.FileContext) error {
 }
 
 func (f *FileService) downloadFile(ctx *pb.FileContext, output string, thread int) error {
-	stat, err := f.rpc.FileSystemService.Stat(
+	stat, err := rpc.FileSystemService.Stat(
 		context.Background(),
 		connect.NewRequest(&pb.FileStatRequest{
 			Context: ctx,
@@ -358,7 +351,7 @@ func (f *FileService) downloadFile(ctx *pb.FileContext, output string, thread in
 			return err
 		}
 
-		list, err := f.rpc.FileSystemService.List(
+		list, err := rpc.FileSystemService.List(
 			context.Background(),
 			connect.NewRequest(&pb.FileListRequest{
 				Context: ctx,
@@ -385,7 +378,7 @@ func (f *FileService) downloadFile(ctx *pb.FileContext, output string, thread in
 		return nil
 	}
 
-	locationRsp, err := f.rpc.LocationService.GetLocationByContext(
+	locationRsp, err := rpc.LocationService.GetLocationByContext(
 		context.Background(),
 		connect.NewRequest(&pb.GetLocationByContextRequest{
 			Context: ctx,
@@ -427,7 +420,7 @@ func (f *FileService) downloadFile(ctx *pb.FileContext, output string, thread in
 				var read *connect.Response[pb.FileReadResponse]
 
 				for retries := 0; retries < 20; retries++ {
-					read, err = f.rpc.FileSystemService.Read(
+					read, err = rpc.FileSystemService.Read(
 						context.Background(),
 						connect.NewRequest(&pb.FileReadRequest{
 							Context:    ctx,
@@ -507,28 +500,25 @@ func (f *FileService) downloadFile(ctx *pb.FileContext, output string, thread in
 }
 
 func (f *FileService) UploadFile(ctx *pb.FileContext) error {
-	inputFilePath, err := runtime.OpenFileDialog(f.ctx, runtime.OpenDialogOptions{
+	inputFilePath, _ := runtime.OpenFileDialog(f.ctx, runtime.OpenDialogOptions{
 		Title:           "Upload File",
 		ShowHiddenFiles: true,
 	})
-	if err != nil {
-		return err
-	}
 
 	if inputFilePath == "" {
-		return nil
+		return errors.New("cancel")
 	}
 
 	_, fileName := filepath.Split(inputFilePath)
 	ctx.Path = filepath.Join(ctx.Path, fileName)
 
 	uploadModel := models.Upload{NodeId: ctx.NodeId, Location: ctx.Location, Path: ctx.Path, Status: "uploading", Progress: 0}
-	if err = database.db.Create(&uploadModel).Error; err != nil {
+	if err := database.db.Create(&uploadModel).Error; err != nil {
 		return err
 	}
 
 	go func() {
-		if err = f.uploadFile(ctx, inputFilePath, &uploadModel); err != nil {
+		if err := f.uploadFile(ctx, inputFilePath, &uploadModel); err != nil {
 			database.db.Model(&uploadModel).Update("status", "failed")
 			runtime.MessageDialog(f.ctx, runtime.MessageDialogOptions{
 				Type:    runtime.ErrorDialog,
@@ -542,7 +532,7 @@ func (f *FileService) UploadFile(ctx *pb.FileContext) error {
 }
 
 func (f *FileService) uploadFile(ctx *pb.FileContext, inputFilePath string, uploadModel *models.Upload) error {
-	locationRsp, err := f.rpc.LocationService.GetLocationByContext(
+	locationRsp, err := rpc.LocationService.GetLocationByContext(
 		context.Background(),
 		connect.NewRequest(&pb.GetLocationByContextRequest{
 			Context: ctx,
@@ -581,7 +571,7 @@ func (f *FileService) uploadFile(ctx *pb.FileContext, inputFilePath string, uplo
 			blockSize = inputFileInfo.Size() - offset
 		}
 
-		storageRsp, err := f.rpc.StorageService.Upload(
+		storageRsp, err := rpc.StorageService.Upload(
 			context.Background(),
 			connect.NewRequest(&pb.StorageUploadRequest{
 				Context:    ctx,
@@ -604,7 +594,7 @@ func (f *FileService) uploadFile(ctx *pb.FileContext, inputFilePath string, uplo
 			return err
 		}
 
-		_, err = f.rpc.FileSystemService.Write(
+		_, err = rpc.FileSystemService.Write(
 			context.Background(),
 			connect.NewRequest(&pb.FileWriteRequest{
 				Context:    ctx,
@@ -631,7 +621,7 @@ func (f *FileService) uploadFile(ctx *pb.FileContext, inputFilePath string, uplo
 }
 
 func (f *FileService) PlayVideo(ctx *pb.FileContext) error {
-	response, err := f.rpc.FileSystemService.M3U8(
+	response, err := rpc.FileSystemService.M3U8(
 		context.Background(),
 		connect.NewRequest(&pb.FileM3U8Request{
 			Context:       ctx,
@@ -648,7 +638,12 @@ func (f *FileService) PlayVideo(ctx *pb.FileContext) error {
 		return err
 	}
 
-	runtime.BrowserOpenURL(f.ctx, f.cfg.Endpoint+"/player/"+signature)
+	cfg, err := config.GetConfig()
+	if err != nil {
+		return err
+	}
+
+	runtime.BrowserOpenURL(f.ctx, cfg.Endpoint+"/player/"+signature)
 	return nil
 }
 

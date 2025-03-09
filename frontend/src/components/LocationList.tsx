@@ -69,7 +69,7 @@ export function LocationList(props: {
     return (
       <>
         <Center pt={200}>
-          <Text color="red" size="sm">
+          <Text c="red" size="sm">
             {error}
           </Text>
         </Center>

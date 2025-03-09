@@ -6,13 +6,9 @@ import (
 
 	"connectrpc.com/connect"
 	pb "github.com/pixelfs/pixelfs/gen/pixelfs/v1"
-	"github.com/pixelfs/pixelfs/rpc/core"
 )
 
-type NodeService struct {
-	ctx context.Context
-	rpc *core.GrpcV1Client
-}
+type NodeService struct{}
 
 var node *NodeService
 var onceNode sync.Once
@@ -27,13 +23,8 @@ func Node() *NodeService {
 	return node
 }
 
-func (n *NodeService) Start(ctx context.Context, rpc *core.GrpcV1Client) {
-	n.ctx = ctx
-	n.rpc = rpc
-}
-
 func (u *NodeService) GetNodes() ([]*pb.Node, error) {
-	response, err := u.rpc.NodeService.GetNodes(
+	response, err := rpc.NodeService.GetNodes(
 		context.Background(),
 		connect.NewRequest(&pb.GetNodesRequest{}),
 	)
@@ -46,7 +37,7 @@ func (u *NodeService) GetNodes() ([]*pb.Node, error) {
 }
 
 func (u *NodeService) RemoveNode(nodeId string) error {
-	_, err := u.rpc.NodeService.Remove(
+	_, err := rpc.NodeService.Remove(
 		context.Background(),
 		connect.NewRequest(&pb.NodeRemoveRequest{
 			NodeId: nodeId,

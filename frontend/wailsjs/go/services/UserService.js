@@ -5,7 +5,3 @@
 export function GetUserInfo() {
   return window['go']['services']['UserService']['GetUserInfo']();
 }
-
-export function Start(arg1, arg2) {
-  return window['go']['services']['UserService']['Start'](arg1, arg2);
-}

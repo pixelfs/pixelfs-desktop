@@ -6,13 +6,9 @@ import (
 
 	"connectrpc.com/connect"
 	pb "github.com/pixelfs/pixelfs/gen/pixelfs/v1"
-	"github.com/pixelfs/pixelfs/rpc/core"
 )
 
-type StorageService struct {
-	ctx context.Context
-	rpc *core.GrpcV1Client
-}
+type StorageService struct{}
 
 var storage *StorageService
 var onceStorage sync.Once
@@ -27,13 +23,8 @@ func Storage() *StorageService {
 	return storage
 }
 
-func (s *StorageService) Start(ctx context.Context, rpc *core.GrpcV1Client) {
-	s.ctx = ctx
-	s.rpc = rpc
-}
-
 func (s *StorageService) GetStorages() ([]*pb.Storage, error) {
-	response, err := s.rpc.StorageService.GetStorages(
+	response, err := rpc.StorageService.GetStorages(
 		context.Background(),
 		connect.NewRequest(&pb.GetStoragesRequest{}),
 	)
@@ -46,7 +37,7 @@ func (s *StorageService) GetStorages() ([]*pb.Storage, error) {
 }
 
 func (s *StorageService) AddS3Storage(name string, config *pb.StorageS3Config, network pb.StorageNetwork) (*pb.AddStorageResponse, error) {
-	response, err := s.rpc.StorageService.AddStorage(
+	response, err := rpc.StorageService.AddStorage(
 		context.Background(),
 		connect.NewRequest(&pb.AddStorageRequest{
 			Storage: &pb.Storage{
@@ -66,7 +57,7 @@ func (s *StorageService) AddS3Storage(name string, config *pb.StorageS3Config, n
 }
 
 func (s *StorageService) RemoveStorage(storageId string) error {
-	_, err := s.rpc.StorageService.RemoveStorage(
+	_, err := rpc.StorageService.RemoveStorage(
 		context.Background(),
 		connect.NewRequest(&pb.RemoveStorageRequest{
 			StorageId: storageId,
@@ -80,7 +71,7 @@ func (s *StorageService) RemoveStorage(storageId string) error {
 }
 
 func (s *StorageService) GetStorageLinks() ([]*pb.StorageLink, error) {
-	response, err := s.rpc.StorageService.GetStorageLinks(
+	response, err := rpc.StorageService.GetStorageLinks(
 		context.Background(),
 		connect.NewRequest(&pb.GetStorageLinksRequest{}),
 	)
@@ -93,7 +84,7 @@ func (s *StorageService) GetStorageLinks() ([]*pb.StorageLink, error) {
 }
 
 func (s *StorageService) AddStorageLink(storageLink *pb.StorageLink) (*pb.AddStorageLinkResponse, error) {
-	response, err := s.rpc.StorageService.AddStorageLink(
+	response, err := rpc.StorageService.AddStorageLink(
 		context.Background(),
 		connect.NewRequest(&pb.AddStorageLinkRequest{
 			StorageLink: storageLink,
@@ -108,7 +99,7 @@ func (s *StorageService) AddStorageLink(storageLink *pb.StorageLink) (*pb.AddSto
 }
 
 func (s *StorageService) RemoveStorageLink(storageLinkId string) error {
-	_, err := s.rpc.StorageService.RemoveStorageLink(
+	_, err := rpc.StorageService.RemoveStorageLink(
 		context.Background(),
 		connect.NewRequest(&pb.RemoveStorageLinkRequest{
 			StorageLinkId: storageLinkId,
@@ -122,7 +113,7 @@ func (s *StorageService) RemoveStorageLink(storageLinkId string) error {
 }
 
 func (s *StorageService) CleanStorageLink(storageLinkId string) error {
-	_, err := s.rpc.StorageService.CleanStorageLink(
+	_, err := rpc.StorageService.CleanStorageLink(
 		context.Background(),
 		connect.NewRequest(&pb.CleanStorageLinkRequest{
 			StorageLinkId: storageLinkId,

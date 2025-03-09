@@ -6,13 +6,9 @@ import (
 
 	"connectrpc.com/connect"
 	pb "github.com/pixelfs/pixelfs/gen/pixelfs/v1"
-	"github.com/pixelfs/pixelfs/rpc/core"
 )
 
-type UserService struct {
-	ctx context.Context
-	rpc *core.GrpcV1Client
-}
+type UserService struct{}
 
 var user *UserService
 var onceUser sync.Once
@@ -27,13 +23,8 @@ func User() *UserService {
 	return user
 }
 
-func (u *UserService) Start(ctx context.Context, rpc *core.GrpcV1Client) {
-	u.ctx = ctx
-	u.rpc = rpc
-}
-
 func (u *UserService) GetUserInfo() (*pb.GetUserInfoResponse, error) {
-	response, err := u.rpc.UserService.GetUserInfo(
+	response, err := rpc.UserService.GetUserInfo(
 		context.Background(),
 		connect.NewRequest(&pb.GetUserInfoRequest{}),
 	)

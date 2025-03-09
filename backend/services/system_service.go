@@ -3,7 +3,6 @@ package services
 import (
 	"context"
 	"fmt"
-	"github.com/pixelfs/pixelfs/util"
 	"os/exec"
 	rt "runtime"
 	"sync"
@@ -11,16 +10,21 @@ import (
 	"github.com/pixelfs/pixelfs/config"
 	"github.com/pixelfs/pixelfs/pixelfsd"
 	"github.com/pixelfs/pixelfs/pixelfsd/ws"
+	"github.com/pixelfs/pixelfs/rpc/core"
+	"github.com/pixelfs/pixelfs/util"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 type SystemService struct {
 	ctx context.Context
-	cfg *config.Config
 }
 
-var system *SystemService
-var onceSystem sync.Once
+var (
+	rpc *core.GrpcV1Client
+
+	system     *SystemService
+	onceSystem sync.Once
+)
 
 func System() *SystemService {
 	if system == nil {
@@ -32,17 +36,24 @@ func System() *SystemService {
 	return system
 }
 
-func (s *SystemService) Start(ctx context.Context, cfg *config.Config) {
+func (s *SystemService) Start(ctx context.Context) {
 	s.ctx = ctx
-	s.cfg = cfg
+
+	cfg, _ := config.GetConfig()
+	rpc = core.NewGrpcV1Client(cfg)
 }
 
 func (s *SystemService) Stop() {
 	ws.StopClient()
 }
 
-func (s *SystemService) StartWebsocketClient() {
-	if err := ws.StartClient(s.cfg); err != nil {
+func (s *SystemService) StartWebsocketClient() error {
+	cfg, err := config.GetConfig()
+	if err != nil {
+		return err
+	}
+
+	if err := ws.StartClient(cfg); err != nil {
 		result, _ := runtime.MessageDialog(s.ctx, runtime.MessageDialogOptions{
 			Type:          runtime.ErrorDialog,
 			Title:         "连接错误",
@@ -52,12 +63,13 @@ func (s *SystemService) StartWebsocketClient() {
 		})
 
 		if result == "重新连接" {
-			ws.StopClient()
-			s.StartWebsocketClient()
+			_ = s.StartWebsocketClient()
 		}
 	}
 
-	pixelfsd.CleanFFmpegCache(s.cfg)
+	rpc = core.NewGrpcV1Client(cfg)
+	pixelfsd.CleanFFmpegCache(cfg)
+	return nil
 }
 
 func (s *SystemService) StopWebsocketClient() {

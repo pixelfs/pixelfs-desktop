@@ -29,7 +29,3 @@ export function RemoveStorage(arg1) {
 export function RemoveStorageLink(arg1) {
   return window['go']['services']['StorageService']['RemoveStorageLink'](arg1);
 }
-
-export function Start(arg1, arg2) {
-  return window['go']['services']['StorageService']['Start'](arg1, arg2);
-}

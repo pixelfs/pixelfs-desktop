@@ -23,7 +23,7 @@ export function LoginPage() {
   };
 
   return (
-    <Center pt={300}>
+    <Center pt={260}>
       {loading ? (
         <Group pt={30}>
           <Loader size={25} />

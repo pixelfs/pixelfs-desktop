@@ -94,7 +94,7 @@ export function FileManager(props: { location: v1.Location; path: string; onChan
     return (
       <>
         <Center pt={300}>
-          <Text color="red" size="sm">
+          <Text c="red" size="sm">
             {error}
           </Text>
         </Center>
@@ -169,7 +169,7 @@ export function FileManager(props: { location: v1.Location; path: string; onChan
                   labels: { confirm: '确认', cancel: '取消' },
                 });
               } catch (error: any) {
-                notifications.show({ color: 'red', message: error });
+                if (error !== 'cancel') notifications.show({ color: 'red', message: error });
               }
             }}
           >
@@ -204,11 +204,11 @@ export function FileManager(props: { location: v1.Location; path: string; onChan
       {hasStorageLink ? null : (
         <Group h={35} bg="yellow" justify="center">
           <Box>
-            <Text color="dark" span>
+            <Text c="dark" size="sm" span>
               当前节点未关联任何存储，下载和上传功能无法使用
             </Text>
             <UnstyledButton ml={10} onClick={() => setShowCreateStorageLink(true)}>
-              <Text color="dark" td="underline">
+              <Text c="dark" size="sm" td="underline">
                 新增关联
               </Text>
             </UnstyledButton>
@@ -288,7 +288,7 @@ export function FileManager(props: { location: v1.Location; path: string; onChan
                             labels: { confirm: '确认', cancel: '取消' },
                           });
                         } catch (error: any) {
-                          notifications.show({ color: 'red', message: error });
+                          if (error !== 'cancel') notifications.show({ color: 'red', message: error });
                         }
                       }}
                     >

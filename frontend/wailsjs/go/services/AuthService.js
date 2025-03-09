@@ -14,6 +14,6 @@ export function Logout() {
   return window['go']['services']['AuthService']['Logout']();
 }
 
-export function Start(arg1, arg2, arg3) {
-  return window['go']['services']['AuthService']['Start'](arg1, arg2, arg3);
+export function Start(arg1) {
+  return window['go']['services']['AuthService']['Start'](arg1);
 }

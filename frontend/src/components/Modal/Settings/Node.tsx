@@ -43,7 +43,7 @@ export function Node(props: { opened: boolean }) {
     return (
       <>
         <Center mt={150}>
-          <Text color="red" size="sm">
+          <Text c="red" size="sm">
             {error}
           </Text>
         </Center>

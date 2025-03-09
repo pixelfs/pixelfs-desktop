@@ -6,14 +6,10 @@ import (
 
 	"connectrpc.com/connect"
 	pb "github.com/pixelfs/pixelfs/gen/pixelfs/v1"
-	"github.com/pixelfs/pixelfs/rpc/core"
 	"github.com/pixelfs/pixelfs/util"
 )
 
-type LocationService struct {
-	ctx context.Context
-	rpc *core.GrpcV1Client
-}
+type LocationService struct{}
 
 var location *LocationService
 var onceLocation sync.Once
@@ -28,13 +24,8 @@ func Location() *LocationService {
 	return location
 }
 
-func (l *LocationService) Start(ctx context.Context, rpc *core.GrpcV1Client) {
-	l.ctx = ctx
-	l.rpc = rpc
-}
-
 func (l *LocationService) GetLocations() ([]*pb.Location, error) {
-	response, err := l.rpc.LocationService.GetLocations(
+	response, err := rpc.LocationService.GetLocations(
 		context.Background(),
 		connect.NewRequest(&pb.GetLocationsRequest{}),
 	)
@@ -52,7 +43,7 @@ func (l *LocationService) AddLocation(nodeId, name, path, blockSize string, bloc
 		return nil, err
 	}
 
-	response, err := l.rpc.LocationService.AddLocation(
+	response, err := rpc.LocationService.AddLocation(
 		context.Background(),
 		connect.NewRequest(&pb.AddLocationRequest{
 			Location: &pb.Location{
@@ -73,7 +64,7 @@ func (l *LocationService) AddLocation(nodeId, name, path, blockSize string, bloc
 }
 
 func (l *LocationService) RemoveLocation(locationId string) (*pb.RemoveLocationResponse, error) {
-	response, err := l.rpc.LocationService.RemoveLocation(
+	response, err := rpc.LocationService.RemoveLocation(
 		context.Background(),
 		connect.NewRequest(&pb.RemoveLocationRequest{
 			LocationId: locationId,

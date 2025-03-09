@@ -10,7 +10,6 @@ import (
 	"github.com/pixelfs/pixelfs-desktop/backend/services"
 	"github.com/pixelfs/pixelfs/config"
 	"github.com/pixelfs/pixelfs/log"
-	"github.com/pixelfs/pixelfs/rpc/core"
 	"github.com/rs/zerolog"
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/menu"
@@ -89,18 +88,11 @@ func main() {
 		AssetServer:              &assetserver.Options{Assets: assets},
 		BackgroundColour:         options.NewRGBA(255, 255, 255, 0),
 		OnStartup: func(ctx context.Context) {
-			rpc := core.NewGrpcV1Client(cfg)
-
 			databaseSvc.Start(ctx)
-			userSvc.Start(ctx, rpc)
-			nodeSvc.Start(ctx, rpc)
-			systemSvc.Start(ctx, cfg)
-			preferencesSvc.Start(ctx)
-			storageSvc.Start(ctx, rpc)
+			authSvc.Start(ctx)
+			fileSvc.Start(ctx)
+			systemSvc.Start(ctx)
 			localStorageSvc.Start(ctx)
-			locationSvc.Start(ctx, rpc)
-			authSvc.Start(ctx, rpc, cfg)
-			fileSvc.Start(ctx, rpc, cfg)
 		},
 		OnShutdown: func(ctx context.Context) {
 			systemSvc.Stop()

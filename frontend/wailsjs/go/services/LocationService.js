@@ -13,7 +13,3 @@ export function GetLocations() {
 export function RemoveLocation(arg1) {
   return window['go']['services']['LocationService']['RemoveLocation'](arg1);
 }
-
-export function Start(arg1, arg2) {
-  return window['go']['services']['LocationService']['Start'](arg1, arg2);
-}

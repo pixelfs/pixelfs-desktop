@@ -18,8 +18,8 @@ export function SelectDirectoryDialog(arg1) {
   return window['go']['services']['SystemService']['SelectDirectoryDialog'](arg1);
 }
 
-export function Start(arg1, arg2) {
-  return window['go']['services']['SystemService']['Start'](arg1, arg2);
+export function Start(arg1) {
+  return window['go']['services']['SystemService']['Start'](arg1);
 }
 
 export function StartWebsocketClient() {

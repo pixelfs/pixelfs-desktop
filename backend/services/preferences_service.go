@@ -1,15 +1,12 @@
 package services
 
 import (
-	"context"
 	"os"
 	"path/filepath"
 	"sync"
 )
 
-type PreferencesService struct {
-	ctx context.Context
-}
+type PreferencesService struct{}
 
 var preferences *PreferencesService
 var oncePreferences sync.Once
@@ -22,10 +19,6 @@ func Preferences() *PreferencesService {
 	}
 
 	return preferences
-}
-
-func (p *PreferencesService) Start(ctx context.Context) {
-	p.ctx = ctx
 }
 
 func (p *PreferencesService) GetDownloadPath() (string, error) {

@@ -17,7 +17,3 @@ export function SetDownloadPath(arg1) {
 export function SetDownloadThreads(arg1) {
   return window['go']['services']['PreferencesService']['SetDownloadThreads'](arg1);
 }
-
-export function Start(arg1) {
-  return window['go']['services']['PreferencesService']['Start'](arg1);
-}

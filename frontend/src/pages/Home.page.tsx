@@ -99,7 +99,9 @@ export function HomePage() {
     return (
       <>
         <Center pt={300}>
-          <Text color="red">{error}</Text>
+          <Text c="red" size="sm">
+            {error}
+          </Text>
         </Center>
 
         <Center pt={10}>
@@ -222,7 +224,7 @@ export function HomePage() {
           ) : (
             <>
               <Center pt={300}>
-                <Text size="sm" fw={400} color="red">
+                <Text size="sm" fw={400} c="red">
                   该节点未发现任何存储位置，请点击下方按钮创建存储位置
                 </Text>
               </Center>

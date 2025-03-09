@@ -9,7 +9,3 @@ export function GetNodes() {
 export function RemoveNode(arg1) {
   return window['go']['services']['NodeService']['RemoveNode'](arg1);
 }
-
-export function Start(arg1, arg2) {
-  return window['go']['services']['NodeService']['Start'](arg1, arg2);
-}
