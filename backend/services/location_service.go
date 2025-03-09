@@ -2,14 +2,12 @@ package services
 
 import (
 	"context"
-	"errors"
 	"sync"
 
 	"connectrpc.com/connect"
 	pb "github.com/pixelfs/pixelfs/gen/pixelfs/v1"
 	"github.com/pixelfs/pixelfs/rpc/core"
 	"github.com/pixelfs/pixelfs/util"
-	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 type LocationService struct {
@@ -75,18 +73,6 @@ func (l *LocationService) AddLocation(nodeId, name, path, blockSize string, bloc
 }
 
 func (l *LocationService) RemoveLocation(locationId string) (*pb.RemoveLocationResponse, error) {
-	result, _ := runtime.MessageDialog(l.ctx, runtime.MessageDialogOptions{
-		Type:          runtime.QuestionDialog,
-		Title:         "删除存储位置",
-		Message:       "确定要删除存储位置吗?",
-		Buttons:       []string{"确定", "取消"},
-		DefaultButton: "确定",
-	})
-
-	if result == "取消" {
-		return nil, errors.New("cancel")
-	}
-
 	response, err := l.rpc.LocationService.RemoveLocation(
 		context.Background(),
 		connect.NewRequest(&pb.RemoveLocationRequest{

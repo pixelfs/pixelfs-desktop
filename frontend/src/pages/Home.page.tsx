@@ -25,14 +25,17 @@ import { LocationList } from '../components/LocationList';
 import { FileManager } from '../components/FileManager';
 import { Settings, TransportModal } from '../components/Modal';
 import { GetUserToken, Logout } from '../../wailsjs/go/services/AuthService';
-import { StartWebsocketClient } from '../../wailsjs/go/services/SystemService';
+import { StartWebsocketClient, StopWebsocketClient } from '../../wailsjs/go/services/SystemService';
 import { CreateLocation } from '../components/Modal/CreateLocation';
 import { notifications } from '@mantine/notifications';
+import { modals } from '@mantine/modals';
+import { GetNodes } from '../../wailsjs/go/services/NodeService';
 
 export function HomePage() {
   const navigate = useNavigate();
   const [path, setPath] = useState<string>('');
   const [nodeId, setNodeId] = useState<string>('');
+  const [nodeList, setNodeList] = useState<Array<v1.Node>>([]);
   const [location, setLocation] = useState<v1.Location | null>(null);
   const [userInfo, setUserInfo] = useState<v1.GetUserInfoResponse>();
   const [loading, setLoading] = useState<boolean>(true);
@@ -49,13 +52,18 @@ export function HomePage() {
       setUserInfo(undefined);
 
       const userInfo = await GetUserInfo();
+      const nodeList = await GetNodes();
 
       // Get selected node id from storage
       const selectedNodeId = await GetLocalStorage('selectedNodeId');
-      const nodeId = !isEmpty(selectedNodeId) ? selectedNodeId : userInfo.nodes?.[0].id!;
+      const nodeId =
+        !isEmpty(selectedNodeId) && nodeList.find((node) => node.id == selectedNodeId)
+          ? selectedNodeId
+          : nodeList[0].id;
 
       await SetLocalStorage('selectedNodeId', nodeId);
       setNodeId(nodeId);
+      setNodeList(nodeList);
       setUserInfo(userInfo);
       setLoading(false);
     } catch (error: any) {
@@ -109,7 +117,7 @@ export function HomePage() {
 
       <CreateLocation
         nodeId={nodeId}
-        nodeList={userInfo?.nodes ?? []}
+        nodeList={nodeList}
         location={{}}
         isEdit={false}
         opened={showCreateLocation}
@@ -149,7 +157,7 @@ export function HomePage() {
                   setNodeId(event.currentTarget.value);
                   SetLocalStorage('selectedNodeId', event.currentTarget.value);
                 }}
-                data={userInfo?.nodes?.map((node) => ({ label: `${node.name ?? ''}(${node.id})`, value: node.id! }))}
+                data={nodeList.map((node) => ({ label: `${node.name ?? ''}(${node.id})`, value: node.id! }))}
               />
 
               <Group justify="space-between">
@@ -165,7 +173,7 @@ export function HomePage() {
 
               <LocationList
                 nodeId={nodeId}
-                nodeList={userInfo?.nodes ?? []}
+                nodeList={nodeList}
                 key={refreshLocationKey}
                 selectedId={location?.id ?? ''}
                 onChangeLocation={(location) => {
@@ -184,14 +192,24 @@ export function HomePage() {
                 variant="default"
                 mt={10}
                 w={265}
-                onClick={async () => {
-                  try {
-                    await Logout();
-                    navigate('/login');
-                  } catch (error: any) {
-                    if (error != 'cancel') notifications.show({ color: 'red', message: error });
-                  }
-                }}
+                onClick={() =>
+                  modals.openConfirmModal({
+                    title: '提示',
+                    centered: true,
+                    children: <Text size="sm">确认要退出当前账户吗?</Text>,
+                    labels: { confirm: '退出', cancel: '取消' },
+                    confirmProps: { color: 'red' },
+                    onConfirm: async () => {
+                      try {
+                        await Logout();
+                        await StopWebsocketClient();
+                        navigate('/login');
+                      } catch (error: any) {
+                        notifications.show({ color: 'red', message: error });
+                      }
+                    },
+                  })
+                }
               >
                 退出
               </Button>
@@ -204,7 +222,7 @@ export function HomePage() {
           ) : (
             <>
               <Center pt={300}>
-                <Text size="md" fw={400} color="red">
+                <Text size="sm" fw={400} color="red">
                   该节点未发现任何存储位置，请点击下方按钮创建存储位置
                 </Text>
               </Center>

@@ -199,7 +199,9 @@ export function StorageLink(props: { opened: boolean }) {
     return (
       <>
         <Center mt={150}>
-          <Text color="red">{error}</Text>
+          <Text color="red" size="sm">
+            {error}
+          </Text>
         </Center>
 
         <Center mt={5}>

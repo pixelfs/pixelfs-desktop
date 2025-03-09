@@ -2,13 +2,11 @@ package services
 
 import (
 	"context"
-	"errors"
 	"sync"
 
 	"connectrpc.com/connect"
 	pb "github.com/pixelfs/pixelfs/gen/pixelfs/v1"
 	"github.com/pixelfs/pixelfs/rpc/core"
-	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 type NodeService struct {
@@ -48,17 +46,6 @@ func (u *NodeService) GetNodes() ([]*pb.Node, error) {
 }
 
 func (u *NodeService) RemoveNode(nodeId string) error {
-	result, _ := runtime.MessageDialog(u.ctx, runtime.MessageDialogOptions{
-		Type:          runtime.QuestionDialog,
-		Message:       "确定要删除节点吗?",
-		Buttons:       []string{"确定", "取消"},
-		DefaultButton: "确定",
-	})
-
-	if result == "取消" {
-		return errors.New("cancel")
-	}
-
 	_, err := u.rpc.NodeService.Remove(
 		context.Background(),
 		connect.NewRequest(&pb.NodeRemoveRequest{

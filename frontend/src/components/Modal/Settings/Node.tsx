@@ -6,6 +6,7 @@ import { GrRefresh } from 'react-icons/gr';
 import { GetNodes, RemoveNode } from '../../../../wailsjs/go/services/NodeService';
 import { v1 } from '../../../../wailsjs/go/models';
 import { notifications } from '@mantine/notifications';
+import { modals } from '@mantine/modals';
 
 export function Node(props: { opened: boolean }) {
   const { colorScheme } = useMantineColorScheme();
@@ -42,7 +43,9 @@ export function Node(props: { opened: boolean }) {
     return (
       <>
         <Center mt={150}>
-          <Text color="red">{error}</Text>
+          <Text color="red" size="sm">
+            {error}
+          </Text>
         </Center>
 
         <Center mt={5}>
@@ -89,19 +92,28 @@ export function Node(props: { opened: boolean }) {
                 <ActionIcon
                   variant="transparent"
                   size={17}
-                  onClick={async () => {
-                    if (node.status === 1) {
-                      notifications.show({ color: 'red', message: '节点在线时无法删除' });
-                      return;
-                    }
+                  onClick={() =>
+                    modals.openConfirmModal({
+                      title: '提示',
+                      centered: true,
+                      children: <Text size="sm">确认要删除节点吗?</Text>,
+                      labels: { confirm: '删除', cancel: '取消' },
+                      confirmProps: { color: 'red' },
+                      onConfirm: async () => {
+                        if (node.status === 1) {
+                          notifications.show({ color: 'red', message: '节点在线时无法删除' });
+                          return;
+                        }
 
-                    try {
-                      await RemoveNode(node.id!);
-                      fetchData();
-                    } catch (error: any) {
-                      if (error !== 'cancel') notifications.show({ color: 'red', message: error });
-                    }
-                  }}
+                        try {
+                          await RemoveNode(node.id!);
+                          fetchData();
+                        } catch (error: any) {
+                          notifications.show({ color: 'red', message: error });
+                        }
+                      },
+                    })
+                  }
                 >
                   <RiDeleteBinLine color="red" />
                 </ActionIcon>

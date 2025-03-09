@@ -32,6 +32,7 @@ import { FileTree } from '../Modal';
 import { FileInfo } from './FileInfo';
 import { GetStorageLinks } from '../../../wailsjs/go/services/StorageService';
 import { CreateStorageLink } from '../Modal/CreateStorageLink';
+import { modals } from '@mantine/modals';
 
 export function FileManager(props: { location: v1.Location; path: string; onChangePath: (path: string) => void }) {
   const { colorScheme } = useMantineColorScheme();
@@ -93,7 +94,9 @@ export function FileManager(props: { location: v1.Location; path: string; onChan
     return (
       <>
         <Center pt={300}>
-          <Text color="red">{error}</Text>
+          <Text color="red" size="sm">
+            {error}
+          </Text>
         </Center>
 
         <Center pt={10}>
@@ -157,11 +160,17 @@ export function FileManager(props: { location: v1.Location; path: string; onChan
             variant="default"
             mx={10}
             onClick={async () => {
-              await UploadFile({
-                node_id: props.location.node_id,
-                location: props.location.name,
-                path: props.path,
-              });
+              try {
+                await UploadFile({ node_id: props.location.node_id, location: props.location.name, path: props.path });
+                modals.openConfirmModal({
+                  title: '提示',
+                  centered: true,
+                  children: <Text size="sm">{'文件上传中, 请到"传输管理->上传列表"中查看进度。'}</Text>,
+                  labels: { confirm: '确认', cancel: '取消' },
+                });
+              } catch (error: any) {
+                notifications.show({ color: 'red', message: error });
+              }
             }}
           >
             上传
@@ -265,11 +274,22 @@ export function FileManager(props: { location: v1.Location; path: string; onChan
                     <Menu.Item
                       leftSection={<RiDownloadLine size={14} />}
                       onClick={async () => {
-                        await DownloadFile({
-                          node_id: props.location.node_id,
-                          location: props.location.name,
-                          path: `${props.path}/${file.name}`,
-                        });
+                        try {
+                          await DownloadFile({
+                            node_id: props.location.node_id,
+                            location: props.location.name,
+                            path: `${props.path}/${file.name}`,
+                          });
+
+                          modals.openConfirmModal({
+                            title: '提示',
+                            centered: true,
+                            children: <Text size="sm">{'文件下载中, 请到"传输管理->下载列表"中查看进度。'}</Text>,
+                            labels: { confirm: '确认', cancel: '取消' },
+                          });
+                        } catch (error: any) {
+                          notifications.show({ color: 'red', message: error });
+                        }
                       }}
                     >
                       下载
@@ -277,19 +297,28 @@ export function FileManager(props: { location: v1.Location; path: string; onChan
                     <Menu.Item
                       color="red"
                       leftSection={<RiDeleteBinLine size={14} />}
-                      onClick={async () => {
-                        try {
-                          await RemoveFile({
-                            node_id: props.location.node_id,
-                            location: props.location.name,
-                            path: `${props.path}/${file.name}`,
-                          });
+                      onClick={() =>
+                        modals.openConfirmModal({
+                          title: '提示',
+                          centered: true,
+                          children: <Text size="sm">确认要删除文件吗?</Text>,
+                          labels: { confirm: '删除', cancel: '取消' },
+                          confirmProps: { color: 'red' },
+                          onConfirm: async () => {
+                            try {
+                              await RemoveFile({
+                                node_id: props.location.node_id,
+                                location: props.location.name,
+                                path: `${props.path}/${file.name}`,
+                              });
 
-                          fetchData();
-                        } catch (error: any) {
-                          if (error !== 'cancel') notifications.show({ color: 'red', message: error });
-                        }
-                      }}
+                              fetchData();
+                            } catch (error: any) {
+                              notifications.show({ color: 'red', message: error });
+                            }
+                          },
+                        })
+                      }
                     >
                       删除
                     </Menu.Item>

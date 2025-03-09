@@ -4,7 +4,7 @@ import {
   Center,
   Group,
   Loader,
-  LoadingOverlay,
+  Text,
   Modal,
   ScrollArea,
   Tree,
@@ -17,6 +17,7 @@ import { CopyFile, GetFileList, MoveFile } from '../../../wailsjs/go/services/Fi
 import { parsePathToContext } from '../../utils/common';
 import { notifications } from '@mantine/notifications';
 import { isEmpty } from 'lodash-es';
+import { modals } from '@mantine/modals';
 
 export function FileTree(props: { opened: boolean; path: string; isMove: boolean; onClose: () => void }) {
   const [loading, setLoading] = useState<boolean>(true);
@@ -116,22 +117,34 @@ export function FileTree(props: { opened: boolean; path: string; isMove: boolean
               <Button
                 variant="default"
                 onClick={async () => {
-                  const srcCtx = parsePathToContext(props.path);
-                  const destCtx = parsePathToContext(selected);
+                  try {
+                    const srcCtx = parsePathToContext(props.path);
+                    const destCtx = parsePathToContext(selected);
 
-                  if (isEmpty(destCtx.node_id) || isEmpty(destCtx.location)) {
-                    notifications.show({
-                      color: 'red',
-                      message: `不能${props.isMove ? '移动' : '复制'}到节点和位置目录`,
+                    if (isEmpty(destCtx.node_id) || isEmpty(destCtx.location)) {
+                      notifications.show({
+                        color: 'red',
+                        message: `不能${props.isMove ? '移动' : '复制'}到根节点或者存储位置目录`,
+                      });
+                      return;
+                    }
+
+                    destCtx.path = `${destCtx.path}/${props.path.split('/').pop()}`;
+                    setSelected('');
+                    props.onClose();
+
+                    props.isMove ? await MoveFile(srcCtx, destCtx) : await CopyFile(srcCtx, destCtx);
+                    modals.openConfirmModal({
+                      title: '提示',
+                      centered: true,
+                      children: (
+                        <Text size="sm">{`文件${props.isMove ? '移动' : '复制'}中, 请到"传输管理->复制移动"中查看进度。`}</Text>
+                      ),
+                      labels: { confirm: '确认', cancel: '取消' },
                     });
-                    return;
+                  } catch (error: any) {
+                    notifications.show({ color: 'red', message: error });
                   }
-
-                  destCtx.path = `${destCtx.path}/${props.path.split('/').pop()}`;
-                  setSelected('');
-                  props.onClose();
-
-                  props.isMove ? await MoveFile(srcCtx, destCtx) : await CopyFile(srcCtx, destCtx);
                 }}
               >
                 {props.isMove ? '移动' : '复制'}

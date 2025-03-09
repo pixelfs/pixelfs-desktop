@@ -49,17 +49,6 @@ func (a *AuthService) GetUserToken() (string, error) {
 }
 
 func (a *AuthService) Logout() error {
-	result, _ := runtime.MessageDialog(a.ctx, runtime.MessageDialogOptions{
-		Type:          runtime.QuestionDialog,
-		Message:       "确定要退出登录吗?",
-		Buttons:       []string{"确定", "取消"},
-		DefaultButton: "确定",
-	})
-
-	if result == "取消" {
-		return errors.New("cancel")
-	}
-
 	return config.Remove("token")
 }
 

@@ -18,6 +18,7 @@ import { RiDeleteBinLine, RiEditLine } from 'react-icons/ri';
 import { isEmpty } from 'lodash-es';
 import { notifications } from '@mantine/notifications';
 import { CreateLocation } from './Modal/CreateLocation';
+import { modals } from '@mantine/modals';
 
 export function LocationList(props: {
   nodeId: string;
@@ -68,7 +69,9 @@ export function LocationList(props: {
     return (
       <>
         <Center pt={200}>
-          <Text color="red">{error}</Text>
+          <Text color="red" size="sm">
+            {error}
+          </Text>
         </Center>
 
         <Center pt={10}>
@@ -135,14 +138,23 @@ export function LocationList(props: {
               <Menu.Item
                 color="red"
                 leftSection={<RiDeleteBinLine size={14} />}
-                onClick={async () => {
-                  try {
-                    await RemoveLocation(location.id!);
-                    await fetchData();
-                  } catch (error: any) {
-                    if (error != 'cancel') notifications.show({ color: 'red', message: error });
-                  }
-                }}
+                onClick={() =>
+                  modals.openConfirmModal({
+                    title: '提示',
+                    centered: true,
+                    children: <Text size="sm">确认要删除存储位置吗?</Text>,
+                    labels: { confirm: '删除', cancel: '取消' },
+                    confirmProps: { color: 'red' },
+                    onConfirm: async () => {
+                      try {
+                        await RemoveLocation(location.id!);
+                        await fetchData();
+                      } catch (error: any) {
+                        notifications.show({ color: 'red', message: error });
+                      }
+                    },
+                  })
+                }
               >
                 删除
               </Menu.Item>

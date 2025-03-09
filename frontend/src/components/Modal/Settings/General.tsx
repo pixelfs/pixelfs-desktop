@@ -1,4 +1,5 @@
 import {
+  Box,
   Button,
   Flex,
   Group,
@@ -51,80 +52,82 @@ export function General(props: { opened: boolean }) {
   }, [props.opened]);
 
   return (
-    <form
-      onSubmit={form.onSubmit(async (values) => {
-        try {
-          await SetDownloadPath(values.downloadPath);
-          await SetDownloadThreads(values.downloadThreads);
+    <Box pl={130}>
+      <form
+        onSubmit={form.onSubmit(async (values) => {
+          try {
+            await SetDownloadPath(values.downloadPath);
+            await SetDownloadThreads(values.downloadThreads);
 
-          notifications.show({ color: 'green', message: '保存成功' });
-        } catch (error: any) {
-          notifications.show({ color: 'red', message: error });
-        }
-      })}
-    >
-      <Flex direction="column" justify="space-between" h={460}>
-        <Table mt={30} ml={130} variant="vertical" layout="auto" withRowBorders={false}>
-          <Table.Tbody>
-            <Table.Tr>
-              <Table.Td w={150}>
-                <Text>主题</Text>
-              </Table.Td>
-              <Table.Td>
-                <SegmentedControl
-                  withItemsBorders={false}
-                  value={colorScheme}
-                  onChange={(value) => setColorScheme(value as any)}
-                  data={[
-                    { label: '自动', value: 'auto' },
-                    { label: '深色', value: 'dark' },
-                    { label: '浅色', value: 'light' },
-                  ]}
-                />
-              </Table.Td>
-            </Table.Tr>
+            notifications.show({ color: 'green', message: '保存成功' });
+          } catch (error: any) {
+            notifications.show({ color: 'red', message: error });
+          }
+        })}
+      >
+        <Flex direction="column" justify="space-between" h={460}>
+          <Table mt={30} variant="vertical" layout="auto" withRowBorders={false}>
+            <Table.Tbody>
+              <Table.Tr>
+                <Table.Td w={150}>
+                  <Text>主题</Text>
+                </Table.Td>
+                <Table.Td>
+                  <SegmentedControl
+                    withItemsBorders={false}
+                    value={colorScheme}
+                    onChange={(value) => setColorScheme(value as any)}
+                    data={[
+                      { label: '自动', value: 'auto' },
+                      { label: '深色', value: 'dark' },
+                      { label: '浅色', value: 'light' },
+                    ]}
+                  />
+                </Table.Td>
+              </Table.Tr>
 
-            <Table.Tr>
-              <Table.Td>
-                <Text>下载路径</Text>
-              </Table.Td>
-              <Table.Td>
-                <TextInput
-                  w={350}
-                  pointer
-                  key={form.key('downloadPath')}
-                  {...form.getInputProps('downloadPath')}
-                  onClick={async () => {
-                    const downloadPath = await SelectDirectoryDialog('选择下载路径');
-                    if (!isEmpty(downloadPath)) form.setValues({ downloadPath });
-                  }}
-                />
-              </Table.Td>
-            </Table.Tr>
+              <Table.Tr>
+                <Table.Td>
+                  <Text>下载路径</Text>
+                </Table.Td>
+                <Table.Td>
+                  <TextInput
+                    w={350}
+                    pointer
+                    key={form.key('downloadPath')}
+                    {...form.getInputProps('downloadPath')}
+                    onClick={async () => {
+                      const downloadPath = await SelectDirectoryDialog('选择下载路径');
+                      if (!isEmpty(downloadPath)) form.setValues({ downloadPath });
+                    }}
+                  />
+                </Table.Td>
+              </Table.Tr>
 
-            <Table.Tr>
-              <Table.Td>
-                <Text>下载线程数</Text>
-              </Table.Td>
-              <Table.Td>
-                <NumberInput
-                  min={1}
-                  max={10}
-                  w={150}
-                  key={form.key('downloadThreads')}
-                  {...form.getInputProps('downloadThreads')}
-                />
-              </Table.Td>
-            </Table.Tr>
-          </Table.Tbody>
-        </Table>
+              <Table.Tr>
+                <Table.Td>
+                  <Text>下载线程数</Text>
+                </Table.Td>
+                <Table.Td>
+                  <NumberInput
+                    min={1}
+                    max={10}
+                    w={150}
+                    key={form.key('downloadThreads')}
+                    {...form.getInputProps('downloadThreads')}
+                  />
+                </Table.Td>
+              </Table.Tr>
+            </Table.Tbody>
+          </Table>
 
-        <Group justify="flex-end" mt="md" mr="md">
-          <Button type="submit" loaderProps={{ type: 'dots' }}>
-            保存
-          </Button>
-        </Group>
-      </Flex>
-    </form>
+          <Group justify="flex-end" mt="md" mr="md">
+            <Button type="submit" loaderProps={{ type: 'dots' }}>
+              保存
+            </Button>
+          </Group>
+        </Flex>
+      </form>
+    </Box>
   );
 }

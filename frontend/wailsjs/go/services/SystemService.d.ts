@@ -16,3 +16,5 @@ export function Start(arg1:context.Context,arg2:config.Config):Promise<void>;
 export function StartWebsocketClient():Promise<void>;
 
 export function Stop():Promise<void>;
+
+export function StopWebsocketClient():Promise<void>;

@@ -23,7 +23,7 @@ export function LoginPage() {
   };
 
   return (
-    <Center py={300}>
+    <Center pt={300}>
       {loading ? (
         <Group pt={30}>
           <Loader size={25} />

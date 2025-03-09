@@ -60,6 +60,10 @@ func (s *SystemService) StartWebsocketClient() {
 	pixelfsd.CleanFFmpegCache(s.cfg)
 }
 
+func (s *SystemService) StopWebsocketClient() {
+	ws.StopClient()
+}
+
 func (s *SystemService) OpenFile(filePath string) error {
 	var cmd *exec.Cmd
 

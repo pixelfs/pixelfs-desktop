@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"os"
+	"path/filepath"
 	"sync"
 )
 
@@ -42,7 +43,7 @@ func (p *PreferencesService) GetDownloadPath() (string, error) {
 		return "", err
 	}
 
-	return home + "/Downloads", nil
+	return filepath.Join(home, "Downloads"), nil
 }
 
 func (p *PreferencesService) SetDownloadPath(path string) error {

@@ -2,13 +2,11 @@ package services
 
 import (
 	"context"
-	"errors"
 	"sync"
 
 	"connectrpc.com/connect"
 	pb "github.com/pixelfs/pixelfs/gen/pixelfs/v1"
 	"github.com/pixelfs/pixelfs/rpc/core"
-	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 type StorageService struct {
@@ -68,17 +66,6 @@ func (s *StorageService) AddS3Storage(name string, config *pb.StorageS3Config, n
 }
 
 func (s *StorageService) RemoveStorage(storageId string) error {
-	result, _ := runtime.MessageDialog(s.ctx, runtime.MessageDialogOptions{
-		Type:          runtime.QuestionDialog,
-		Message:       "确定要删除存储吗?",
-		Buttons:       []string{"确定", "取消"},
-		DefaultButton: "确定",
-	})
-
-	if result == "取消" {
-		return errors.New("cancel")
-	}
-
 	_, err := s.rpc.StorageService.RemoveStorage(
 		context.Background(),
 		connect.NewRequest(&pb.RemoveStorageRequest{

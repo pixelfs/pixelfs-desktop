@@ -8,6 +8,7 @@ import { v1 } from '../../../../wailsjs/go/models';
 import { notifications } from '@mantine/notifications';
 import { CreateStorage } from '../CreateStorage';
 import { StorageInfo } from './StorageInfo';
+import { modals } from '@mantine/modals';
 
 export function Storage(props: { opened: boolean }) {
   const { colorScheme } = useMantineColorScheme();
@@ -47,7 +48,9 @@ export function Storage(props: { opened: boolean }) {
     return (
       <>
         <Center mt={150}>
-          <Text color="red">{error}</Text>
+          <Text color="red" size="sm">
+            {error}
+          </Text>
         </Center>
 
         <Center mt={5}>
@@ -127,15 +130,23 @@ export function Storage(props: { opened: boolean }) {
                   <ActionIcon
                     variant="transparent"
                     size={17}
-                    onClick={async (event) => {
+                    onClick={(event) => {
                       event.stopPropagation();
-
-                      try {
-                        await RemoveStorage(storage.id!);
-                        fetchData();
-                      } catch (error: any) {
-                        if (error !== 'cancel') notifications.show({ color: 'red', message: error });
-                      }
+                      modals.openConfirmModal({
+                        title: '提示',
+                        centered: true,
+                        children: <Text size="sm">确认要删除存储吗?</Text>,
+                        labels: { confirm: '删除', cancel: '取消' },
+                        confirmProps: { color: 'red' },
+                        onConfirm: async () => {
+                          try {
+                            await RemoveStorage(storage.id!);
+                            fetchData();
+                          } catch (error: any) {
+                            notifications.show({ color: 'red', message: error });
+                          }
+                        },
+                      });
                     }}
                   >
                     <RiDeleteBinLine color="red" />

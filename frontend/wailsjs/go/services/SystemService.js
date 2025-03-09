@@ -29,3 +29,7 @@ export function StartWebsocketClient() {
 export function Stop() {
   return window['go']['services']['SystemService']['Stop']();
 }
+
+export function StopWebsocketClient() {
+  return window['go']['services']['SystemService']['StopWebsocketClient']();
+}

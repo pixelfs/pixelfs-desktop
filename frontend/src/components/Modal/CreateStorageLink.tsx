@@ -8,7 +8,6 @@ import {
   Modal,
   NativeSelect,
   Radio,
-  Select,
   Stack,
   Text,
   TextInput,
@@ -77,6 +76,8 @@ export function CreateStorageLink(props: {
             storage: isEmpty(storageList) ? '' : storageList[0].id,
             node: isEmpty(nodeList) ? '' : nodeList[0].id,
             location: isEmpty(locationList) ? '' : locationList[0].id,
+            nodeOrLocation: 'node',
+            limitSize: '128MB',
           });
         }
 

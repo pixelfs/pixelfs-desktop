@@ -2,7 +2,6 @@ package services
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"net/url"
@@ -68,18 +67,6 @@ func (f *FileService) GetFileList(ctx *pb.FileContext) (*pb.FileListResponse, er
 }
 
 func (f *FileService) RemoveFile(ctx *pb.FileContext) error {
-	result, _ := runtime.MessageDialog(f.ctx, runtime.MessageDialogOptions{
-		Type:          runtime.QuestionDialog,
-		Title:         "删除文件",
-		Message:       "确定要删除文件吗?",
-		Buttons:       []string{"确定", "取消"},
-		DefaultButton: "确定",
-	})
-
-	if result == "取消" {
-		return errors.New("cancel")
-	}
-
 	_, err := f.rpc.FileSystemService.Remove(
 		context.Background(),
 		connect.NewRequest(&pb.FileRemoveRequest{
@@ -137,11 +124,6 @@ func (f *FileService) MoveFile(src *pb.FileContext, dest *pb.FileContext) error 
 		}
 	}()
 
-	runtime.MessageDialog(f.ctx, runtime.MessageDialogOptions{
-		Type:    runtime.InfoDialog,
-		Message: `文件移动中, 请到"传输管理->复制移动"中查看进度。`,
-	})
-
 	return nil
 }
 
@@ -155,11 +137,6 @@ func (f *FileService) CopyFile(src *pb.FileContext, dest *pb.FileContext) error 
 			})
 		}
 	}()
-
-	runtime.MessageDialog(f.ctx, runtime.MessageDialogOptions{
-		Type:    runtime.InfoDialog,
-		Message: `文件下载中, 请到"传输管理->复制移动"中查看进度。`,
-	})
 
 	return nil
 }
@@ -351,11 +328,6 @@ func (f *FileService) DownloadFile(ctx *pb.FileContext) error {
 			})
 		}
 	}()
-
-	runtime.MessageDialog(f.ctx, runtime.MessageDialogOptions{
-		Type:    runtime.InfoDialog,
-		Message: `文件下载中, 请到"传输管理->下载列表"中查看进度。`,
-	})
 
 	return err
 }
@@ -565,11 +537,6 @@ func (f *FileService) UploadFile(ctx *pb.FileContext) error {
 			})
 		}
 	}()
-
-	runtime.MessageDialog(f.ctx, runtime.MessageDialogOptions{
-		Type:    runtime.InfoDialog,
-		Message: `文件上传中, 请到"传输管理->上传列表"中查看进度。`,
-	})
 
 	return nil
 }
