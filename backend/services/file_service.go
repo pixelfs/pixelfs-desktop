@@ -47,7 +47,7 @@ func (f *FileService) Start(ctx context.Context) {
 	f.ctx = ctx
 }
 
-func (f *FileService) GetFileList(ctx *pb.FileContext) (*pb.FileListResponse, error) {
+func (f *FileService) GetFileList(ctx *pb.FileContext) ([]*pb.File, error) {
 	response, err := rpc.FileSystemService.List(
 		context.Background(),
 		connect.NewRequest(&pb.FileListRequest{
@@ -59,7 +59,7 @@ func (f *FileService) GetFileList(ctx *pb.FileContext) (*pb.FileListResponse, er
 		return nil, err
 	}
 
-	return response.Msg, nil
+	return response.Msg.GetFiles(), nil
 }
 
 func (f *FileService) RemoveFile(ctx *pb.FileContext) error {

@@ -47,3 +47,10 @@ export function isVideo(name: string): boolean {
     '.ts',
   ].includes(name.slice(name.lastIndexOf('.')).toLowerCase());
 }
+
+export function truncateText(str: string, maxLength = 70) {
+  if (str.length <= maxLength) return str;
+
+  const half = Math.floor((maxLength - 3) / 2); // 计算两边各留多少字符
+  return str.slice(0, half) + '...' + str.slice(-half);
+}

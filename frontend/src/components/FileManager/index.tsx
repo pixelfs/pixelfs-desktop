@@ -14,7 +14,8 @@ import {
   useMantineColorScheme,
   UnstyledButton,
 } from '@mantine/core';
-import { isEmpty } from 'lodash-es';
+import { modals } from '@mantine/modals';
+import { isEmpty, orderBy } from 'lodash-es';
 import { useEffect, useState } from 'react';
 import { FiMoreHorizontal } from 'react-icons/fi';
 import { isMacOS } from '../../utils/platform';
@@ -32,7 +33,7 @@ import { FileTree } from '../Modal';
 import { FileInfo } from './FileInfo';
 import { GetStorageLinks } from '../../../wailsjs/go/services/StorageService';
 import { CreateStorageLink } from '../Modal/CreateStorageLink';
-import { modals } from '@mantine/modals';
+import { truncateText } from '../../utils/common';
 
 export function FileManager(props: { location: v1.Location; path: string; onChangePath: (path: string) => void }) {
   const { colorScheme } = useMantineColorScheme();
@@ -54,11 +55,15 @@ export function FileManager(props: { location: v1.Location; path: string; onChan
       setFiles([]);
       setError('');
 
-      const files = await GetFileList({
-        node_id: props.location.node_id,
-        location: props.location.name,
-        path: props.path,
-      });
+      const files = orderBy(
+        await GetFileList({
+          node_id: props.location.node_id,
+          location: props.location.name,
+          path: props.path,
+        }),
+        [(v) => (v.type! <= 3 ? 0 : 1), 'name'],
+        ['asc', 'asc'],
+      );
 
       const storageLinks = await GetStorageLinks();
       setHasStorageLink(
@@ -70,7 +75,7 @@ export function FileManager(props: { location: v1.Location; path: string; onChan
         ),
       );
 
-      setFiles(files.files ?? []);
+      setFiles(files ?? []);
       setLoading(false);
     } catch (error: any) {
       setError(error);
@@ -237,7 +242,7 @@ export function FileManager(props: { location: v1.Location; path: string; onChan
               >
                 {file.type === 3 ? <GoFileDirectoryFill size={14} /> : <FaRegFileAlt />}
                 <Text span pl={3}>
-                  {file.name}
+                  {truncateText(file.name ?? '')}
                 </Text>
               </Table.Td>
               <Table.Td>{file.size ? formatBytes(file.size) : '-'}</Table.Td>

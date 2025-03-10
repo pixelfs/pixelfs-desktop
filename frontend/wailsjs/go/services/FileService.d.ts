@@ -7,7 +7,7 @@ export function CopyFile(arg1:v1.FileContext,arg2:v1.FileContext):Promise<void>;
 
 export function DownloadFile(arg1:v1.FileContext):Promise<void>;
 
-export function GetFileList(arg1:v1.FileContext):Promise<v1.FileListResponse>;
+export function GetFileList(arg1:v1.FileContext):Promise<Array<v1.File>>;
 
 export function Mkdir(arg1:v1.FileContext):Promise<void>;
 

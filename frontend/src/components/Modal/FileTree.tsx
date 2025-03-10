@@ -46,7 +46,7 @@ export function FileTree(props: { opened: boolean; path: string; isMove: boolean
       try {
         const files = await GetFileList(parsePathToContext(value));
 
-        const dirs = (files.files ?? []).filter((file) => file.type! <= 3);
+        const dirs = files.filter((file) => file.type! <= 3);
         const newChildren = dirs.map((dir) => ({ label: dir.name!, value: `${value}/${dir.name!}` }));
 
         setData((prevData) => {
@@ -69,7 +69,7 @@ export function FileTree(props: { opened: boolean; path: string; isMove: boolean
       setLoadedPaths(new Set());
 
       tree.collapseAllNodes();
-      const dirs = ((await GetFileList({})).files ?? []).filter((file) => file.type! <= 3);
+      const dirs = (await GetFileList({})).filter((file) => file.type! <= 3);
 
       setData(dirs.map((dir) => ({ label: dir.name!, value: dir.name! })));
       setLoading(false);

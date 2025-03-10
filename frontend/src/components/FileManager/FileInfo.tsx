@@ -17,7 +17,7 @@ export function FileInfo(props: {
 
   return (
     <Modal opened={props.opened} onClose={props.onClose} title="文件信息" size="auto" centered>
-      <Box w={400} mih={100}>
+      <Box miw={400} mih={100}>
         <Table variant="vertical" layout="auto" withRowBorders={false}>
           <Table.Tbody>
             {[
