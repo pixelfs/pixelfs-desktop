@@ -1,4 +1,4 @@
-import { Box, Button, Grid, Group, Modal, Select, Text, TextInput } from '@mantine/core';
+import { Box, Button, Code, Grid, Group, Modal, Select, Text, TextInput } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { isEmpty } from 'lodash-es';
 import { useEffect, useState } from 'react';
@@ -57,6 +57,15 @@ export function CreateStorage(props: { opened: boolean; onClose: () => void; onC
               });
 
               await AddS3Storage(values.name, config, values.network === 'public' ? 0 : 1);
+              notifications.show({
+                color: 'green',
+                message: (
+                  <Text size="sm">
+                    存储 <Code>{values.name}</Code> 创建成功
+                  </Text>
+                ),
+              });
+
               props.onCreated();
               setSaveLoading(false);
             } catch (error: any) {

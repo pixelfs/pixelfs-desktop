@@ -131,6 +131,7 @@ export function CreateStorageLink(props: {
                   limit_size: await ParseBytes(values.limitSize),
                 });
 
+                notifications.show({ color: 'green', message: `保存成功` });
                 props.onCreated();
                 setSaveLoading(false);
               } catch (error: any) {

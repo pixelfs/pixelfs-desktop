@@ -3,6 +3,7 @@ import {
   ActionIcon,
   Button,
   Center,
+  Code,
   Group,
   Loader,
   Menu,
@@ -137,6 +138,14 @@ export function StorageLink(props: { opened: boolean }) {
 
                 try {
                   await RemoveStorageLink(storageLinkId);
+                  notifications.show({
+                    color: 'green',
+                    message: (
+                      <Text size="sm">
+                        存储关联 <Code>{storageLinkId}</Code> 删除成功
+                      </Text>
+                    ),
+                  });
                   fetchData();
                   modals.close(modalId);
                 } catch (error: any) {
@@ -163,7 +172,7 @@ export function StorageLink(props: { opened: boolean }) {
       const locationList = await GetLocations();
 
       const storageLinkList = await Promise.all(
-        (await GetStorageLinks()).map(async (storageLink) => ({
+        ((await GetStorageLinks()) ?? []).map(async (storageLink) => ({
           ...storageLink,
           node: nodeList.find((node) => node.id === storageLink.node_id),
           storage: storageList.find((storage) => storage.id === storageLink.storage_id),
@@ -243,7 +252,7 @@ export function StorageLink(props: { opened: boolean }) {
 
       {isEmpty(storageLinkList) ? (
         <Center mt={150}>
-          <Text size="lg">未找到存储关联信息</Text>
+          <Text>未找到存储关联信息</Text>
         </Center>
       ) : (
         <Table striped highlightOnHover withRowBorders={false}>

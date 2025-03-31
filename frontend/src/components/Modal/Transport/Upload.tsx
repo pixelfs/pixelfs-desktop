@@ -1,20 +1,26 @@
 import { isEmpty } from 'lodash-es';
-import { ActionIcon, Center, Group, Loader, Table, Text, Tooltip, useMantineColorScheme } from '@mantine/core';
-import { models } from '../../../../wailsjs/go/models';
-import { DeleteUpload, GetUploadList } from '../../../../wailsjs/go/services/DatabaseService';
+import { ActionIcon, Button, Center, Group, Loader, Table, Text, Tooltip, useMantineColorScheme } from '@mantine/core';
+import { services } from '../../../../wailsjs/go/models';
+import {
+  DeleteTransportManager,
+  DeleteTransportManagerByType,
+  GetTransportManagers,
+} from '../../../../wailsjs/go/services/DatabaseService';
 import { useEffect, useState } from 'react';
 import { RiDeleteBinLine } from 'react-icons/ri';
 import { GrRefresh } from 'react-icons/gr';
+import { modals } from '@mantine/modals';
+import { notifications } from '@mantine/notifications';
 
 export function Upload(props: { opened: boolean }) {
   const { colorScheme } = useMantineColorScheme();
   const [loading, setLoading] = useState<boolean>(true);
-  const [uploadList, setUploadList] = useState<Array<models.Upload>>([]);
+  const [uploadList, setUploadList] = useState<Array<services.TransportManager>>([]);
 
   const fetchData = async () => {
     try {
       setLoading(true);
-      setUploadList(await GetUploadList());
+      setUploadList(await GetTransportManagers('upload'));
       setLoading(false);
     } catch (e) {
       setLoading(false);
@@ -27,7 +33,7 @@ export function Upload(props: { opened: boolean }) {
 
   if (loading) {
     return (
-      <Center mt={150}>
+      <Center mt={200}>
         <Loader color="blue" />
       </Center>
     );
@@ -35,7 +41,7 @@ export function Upload(props: { opened: boolean }) {
 
   if (isEmpty(uploadList)) {
     return (
-      <Center mt={150}>
+      <Center mt={200}>
         <Text size="lg">没有上传任务</Text>
       </Center>
     );
@@ -44,6 +50,28 @@ export function Upload(props: { opened: boolean }) {
   return (
     <>
       <Group justify="end" mt={15}>
+        <Button
+          color="red"
+          onClick={() =>
+            modals.openConfirmModal({
+              title: '提示',
+              centered: true,
+              children: <Text size="sm">确认要清空上传历史记录吗?</Text>,
+              labels: { confirm: '删除', cancel: '取消' },
+              confirmProps: { color: 'red' },
+              onConfirm: async () => {
+                try {
+                  await DeleteTransportManagerByType('upload');
+                  fetchData();
+                } catch (error: any) {
+                  notifications.show({ color: 'red', message: error });
+                }
+              },
+            })
+          }
+        >
+          清空历史
+        </Button>
         <ActionIcon variant="transparent" size={20} onClick={() => fetchData()}>
           <GrRefresh size={15} color={colorScheme === 'light' ? '#000000' : '#ffffff'} />
         </ActionIcon>
@@ -85,7 +113,7 @@ export function Upload(props: { opened: boolean }) {
                   variant="transparent"
                   size={17}
                   onClick={async () => {
-                    await DeleteUpload(upload.ID);
+                    await DeleteTransportManager(upload.ID);
                     fetchData();
                   }}
                 >

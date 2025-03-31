@@ -1,7 +1,22 @@
 import { isEmpty } from 'lodash-es';
-import { ActionIcon, Center, Group, Loader, Menu, Table, Text, Tooltip, useMantineColorScheme } from '@mantine/core';
-import { models } from '../../../../wailsjs/go/models';
-import { DeleteDownload, GetDownloadList } from '../../../../wailsjs/go/services/DatabaseService';
+import {
+  ActionIcon,
+  Button,
+  Center,
+  Group,
+  Loader,
+  Menu,
+  Table,
+  Text,
+  Tooltip,
+  useMantineColorScheme,
+} from '@mantine/core';
+import { services } from '../../../../wailsjs/go/models';
+import {
+  DeleteTransportManager,
+  DeleteTransportManagerByType,
+  GetTransportManagers,
+} from '../../../../wailsjs/go/services/DatabaseService';
 import { useEffect, useState } from 'react';
 import { RiDeleteBinLine } from 'react-icons/ri';
 import { GrRefresh } from 'react-icons/gr';
@@ -9,16 +24,17 @@ import { FiMoreHorizontal } from 'react-icons/fi';
 import { IoMdOpen } from 'react-icons/io';
 import { OpenFile } from '../../../../wailsjs/go/services/SystemService';
 import { notifications } from '@mantine/notifications';
+import { modals } from '@mantine/modals';
 
 export function Download(props: { opened: boolean }) {
   const { colorScheme } = useMantineColorScheme();
   const [loading, setLoading] = useState<boolean>(true);
-  const [downloadList, setDownloadList] = useState<Array<models.Download>>([]);
+  const [downloadList, setDownloadList] = useState<Array<services.TransportManager>>([]);
 
   const fetchData = async () => {
     try {
       setLoading(true);
-      setDownloadList(await GetDownloadList());
+      setDownloadList(await GetTransportManagers('download'));
       setLoading(false);
     } catch (e) {
       setLoading(false);
@@ -31,7 +47,7 @@ export function Download(props: { opened: boolean }) {
 
   if (loading) {
     return (
-      <Center mt={150}>
+      <Center mt={200}>
         <Loader color="blue" />
       </Center>
     );
@@ -39,7 +55,7 @@ export function Download(props: { opened: boolean }) {
 
   if (isEmpty(downloadList)) {
     return (
-      <Center mt={150}>
+      <Center mt={200}>
         <Text size="lg">没有下载任务</Text>
       </Center>
     );
@@ -48,6 +64,28 @@ export function Download(props: { opened: boolean }) {
   return (
     <>
       <Group justify="end" mt={15}>
+        <Button
+          color="red"
+          onClick={() =>
+            modals.openConfirmModal({
+              title: '提示',
+              centered: true,
+              children: <Text size="sm">确认要清空下载历史记录吗?</Text>,
+              labels: { confirm: '删除', cancel: '取消' },
+              confirmProps: { color: 'red' },
+              onConfirm: async () => {
+                try {
+                  await DeleteTransportManagerByType('download');
+                  fetchData();
+                } catch (error: any) {
+                  notifications.show({ color: 'red', message: error });
+                }
+              },
+            })
+          }
+        >
+          清空历史
+        </Button>
         <ActionIcon variant="transparent" size={20} onClick={() => fetchData()}>
           <GrRefresh size={15} color={colorScheme === 'light' ? '#000000' : '#ffffff'} />
         </ActionIcon>
@@ -102,7 +140,7 @@ export function Download(props: { opened: boolean }) {
                             return;
                           }
 
-                          await OpenFile(download.LocalPath);
+                          await OpenFile(download.LocalPath ?? '');
                         } catch (error: any) {
                           notifications.show({ color: 'red', message: error });
                         }
@@ -114,7 +152,7 @@ export function Download(props: { opened: boolean }) {
                       color="red"
                       leftSection={<RiDeleteBinLine size={14} />}
                       onClick={async () => {
-                        await DeleteDownload(download.ID);
+                        await DeleteTransportManager(download.ID);
                         fetchData();
                       }}
                     >

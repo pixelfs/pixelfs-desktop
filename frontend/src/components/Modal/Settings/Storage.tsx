@@ -1,5 +1,16 @@
 import { isEmpty } from 'lodash-es';
-import { ActionIcon, Button, Center, Group, Loader, Table, Text, Tooltip, useMantineColorScheme } from '@mantine/core';
+import {
+  ActionIcon,
+  Button,
+  Center,
+  Code,
+  Group,
+  Loader,
+  Table,
+  Text,
+  Tooltip,
+  useMantineColorScheme,
+} from '@mantine/core';
 import { useEffect, useState } from 'react';
 import { RiDeleteBinLine } from 'react-icons/ri';
 import { GrRefresh } from 'react-icons/gr';
@@ -87,7 +98,7 @@ export function Storage(props: { opened: boolean }) {
 
       {isEmpty(storageList) ? (
         <Center mt={150}>
-          <Text size="lg">未找到存储信息</Text>
+          <Text>未找到存储信息</Text>
         </Center>
       ) : (
         <Table striped highlightOnHover withRowBorders={false}>
@@ -121,7 +132,7 @@ export function Storage(props: { opened: boolean }) {
                 <Table.Td>{storage.network === 1 ? '私网' : '公网'}</Table.Td>
                 <Table.Td>
                   <Tooltip label={JSON.stringify(storage.Config['S3'])}>
-                    <Text w={270} lineClamp={1} size="sm">
+                    <Text w={260} lineClamp={1} size="sm">
                       {JSON.stringify(storage.Config['S3'])}
                     </Text>
                   </Tooltip>
@@ -135,12 +146,21 @@ export function Storage(props: { opened: boolean }) {
                       modals.openConfirmModal({
                         title: '提示',
                         centered: true,
-                        children: <Text size="sm">确认要删除存储吗?</Text>,
+                        children: <Text size="sm">确认要删除 {`<${storage.name}>`} 存储吗?</Text>,
                         labels: { confirm: '删除', cancel: '取消' },
                         confirmProps: { color: 'red' },
                         onConfirm: async () => {
                           try {
                             await RemoveStorage(storage.id!);
+                            notifications.show({
+                              color: 'green',
+                              message: (
+                                <Text size="sm">
+                                  存储 <Code>{storage.name}</Code> 删除成功
+                                </Text>
+                              ),
+                            });
+
                             fetchData();
                           } catch (error: any) {
                             notifications.show({ color: 'red', message: error });

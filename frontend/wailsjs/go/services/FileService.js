@@ -30,8 +30,16 @@ export function RemoveFile(arg1) {
   return window['go']['services']['FileService']['RemoveFile'](arg1);
 }
 
+export function RenameFile(arg1, arg2) {
+  return window['go']['services']['FileService']['RenameFile'](arg1, arg2);
+}
+
 export function Start(arg1) {
   return window['go']['services']['FileService']['Start'](arg1);
+}
+
+export function StatFile(arg1) {
+  return window['go']['services']['FileService']['StatFile'](arg1);
 }
 
 export function UploadFile(arg1) {

@@ -13,6 +13,7 @@ import {
   Menu,
   useMantineColorScheme,
   UnstyledButton,
+  Code,
 } from '@mantine/core';
 import { modals } from '@mantine/modals';
 import { isEmpty, orderBy } from 'lodash-es';
@@ -25,15 +26,24 @@ import { formatBytes } from 'bytes-formatter';
 import { GrRefresh } from 'react-icons/gr';
 import { IoHomeOutline } from 'react-icons/io5';
 import { v1 } from '../../../wailsjs/go/models';
-import { DownloadFile, GetFileList, RemoveFile, UploadFile } from '../../../wailsjs/go/services/FileService';
+import {
+  CopyFile,
+  DownloadFile,
+  GetFileList,
+  MoveFile,
+  RemoveFile,
+  UploadFile,
+} from '../../../wailsjs/go/services/FileService';
+import { CgRename } from 'react-icons/cg';
 import { RiDeleteBinLine, RiDownloadLine } from 'react-icons/ri';
 import { NewDirectory } from './NewDirectory';
+import { RenameFile } from './RenameFile';
 import { notifications } from '@mantine/notifications';
 import { FileTree } from '../Modal';
 import { FileInfo } from './FileInfo';
 import { GetStorageLinks } from '../../../wailsjs/go/services/StorageService';
 import { CreateStorageLink } from '../Modal/CreateStorageLink';
-import { truncateText } from '../../utils/common';
+import { parsePathToContext, truncateText } from '../../utils/common';
 
 export function FileManager(props: { location: v1.Location; path: string; onChangePath: (path: string) => void }) {
   const { colorScheme } = useMantineColorScheme();
@@ -42,6 +52,7 @@ export function FileManager(props: { location: v1.Location; path: string; onChan
   const [hasStorageLink, setHasStorageLink] = useState<boolean>(true);
   const [error, setError] = useState<string>('');
   const [showNewDirectory, setShowNewDirectory] = useState<boolean>(false);
+  const [showRenameFile, setShowRenameFile] = useState<boolean>(false);
   const [showFileTree, setShowFileTree] = useState<boolean>(false);
   const [isMove, setIsMove] = useState<boolean>(false);
   const [selectedFile, setSelectedFile] = useState<v1.File>();
@@ -134,11 +145,53 @@ export function FileManager(props: { location: v1.Location; path: string; onChan
         }}
       />
 
+      <RenameFile
+        opened={showRenameFile}
+        location={props.location}
+        path={props.path}
+        name={selectedFile?.name ?? ''}
+        onClose={() => setShowRenameFile(false)}
+        onCreated={() => {
+          setShowRenameFile(false);
+          fetchData();
+        }}
+      />
+
       <FileTree
         opened={showFileTree}
-        path={`${props.location.node_id}/${props.location.name}${props.path}/${selectedFile?.name}`}
-        isMove={isMove}
+        title={isMove ? '移动到' : '复制到'}
         onClose={() => setShowFileTree(false)}
+        onConfirm={async (path) => {
+          try {
+            const destCtx = parsePathToContext(path);
+            const srcCtx = parsePathToContext(
+              `${props.location.node_id}/${props.location.name}${props.path}/${selectedFile?.name}`,
+            );
+
+            if (isEmpty(path) || isEmpty(destCtx.node_id) || isEmpty(destCtx.location)) {
+              notifications.show({
+                color: 'red',
+                message: `不能${isMove ? '移动' : '复制'}到根节点或者存储位置目录`,
+              });
+              return;
+            }
+
+            destCtx.path = `${destCtx.path}/${selectedFile?.name}`;
+            setShowFileTree(false);
+
+            isMove ? await MoveFile(srcCtx, destCtx) : await CopyFile(srcCtx, destCtx);
+            modals.openConfirmModal({
+              title: '提示',
+              centered: true,
+              children: (
+                <Text size="sm">{`文件${isMove ? '移动' : '复制'}中, 请到"传输管理->复制移动"中查看进度。`}</Text>
+              ),
+              labels: { confirm: '确认', cancel: '取消' },
+            });
+          } catch (error: any) {
+            notifications.show({ color: 'red', message: error });
+          }
+        }}
       />
 
       <CreateStorageLink
@@ -257,6 +310,15 @@ export function FileManager(props: { location: v1.Location; path: string; onChan
 
                   <Menu.Dropdown>
                     <Menu.Item
+                      leftSection={<CgRename size={14} />}
+                      onClick={() => {
+                        setSelectedFile(file);
+                        setShowRenameFile(true);
+                      }}
+                    >
+                      重命名
+                    </Menu.Item>
+                    <Menu.Item
                       leftSection={<GoMoveToEnd size={14} />}
                       onClick={() => {
                         setIsMove(true);
@@ -317,6 +379,14 @@ export function FileManager(props: { location: v1.Location; path: string; onChan
                                 path: `${props.path}/${file.name}`,
                               });
 
+                              notifications.show({
+                                color: 'green',
+                                message: (
+                                  <Text size="sm">
+                                    删除文件 <Code>{file.name}</Code> 成功
+                                  </Text>
+                                ),
+                              });
                               fetchData();
                             } catch (error: any) {
                               notifications.show({ color: 'red', message: error });

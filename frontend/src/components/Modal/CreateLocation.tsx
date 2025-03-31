@@ -1,4 +1,4 @@
-import { Box, Button, Group, Modal, NativeSelect, NumberInput, TextInput } from '@mantine/core';
+import { Box, Button, Code, Group, Modal, NativeSelect, NumberInput, Text, TextInput } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { isEmpty } from 'lodash-es';
 import { useEffect, useState } from 'react';
@@ -64,6 +64,16 @@ export function CreateLocation(props: {
             try {
               setSaveLoading(true);
               await AddLocation(nodeId, values.name, values.path, values.blockSize, values.blockDuration);
+
+              notifications.show({
+                color: 'green',
+                message: (
+                  <Text size="sm">
+                    存储位置 <Code>{values.name}</Code> 创建成功
+                  </Text>
+                ),
+              });
+
               props.onCreated();
               setSaveLoading(false);
             } catch (error: any) {

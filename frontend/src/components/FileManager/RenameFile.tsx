@@ -1,29 +1,30 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Box, Button, Code, Group, Input, Modal, Text } from '@mantine/core';
 import { v1 } from '../../../wailsjs/go/models';
-import { Mkdir } from '../../../wailsjs/go/services/FileService';
+import { MoveFile } from '../../../wailsjs/go/services/FileService';
 import { isEmpty } from 'lodash-es';
 import { notifications } from '@mantine/notifications';
 
-export function NewDirectory(props: {
+export function RenameFile(props: {
   opened: boolean;
   location: v1.Location;
   path: string;
+  name: string;
   onClose: () => void;
   onCreated: () => void;
 }) {
-  const [value, setValue] = useState('');
+  const [value, setValue] = useState(props.name);
   const [saveLoading, setSaveLoading] = useState<boolean>(false);
 
+  useEffect(() => {
+    setValue(props.name);
+  }, [props.name]);
+
   return (
-    <Modal opened={props.opened} onClose={props.onClose} title="新建文件夹" size="auto" centered>
+    <Modal opened={props.opened} onClose={props.onClose} title="重命名文件" size="auto" centered>
       <Box miw={300} mih={100}>
-        <Input
-          placeholder="请输入文件夹名称"
-          data-autofocus
-          onChange={(event) => setValue(event.currentTarget.value)}
-          mt={10}
-        />
+        <Input value={value} onChange={(event) => setValue(event.currentTarget.value)} mt={10} />
+
         <Group justify="flex-end">
           <Button
             mt={20}
@@ -31,23 +32,37 @@ export function NewDirectory(props: {
             loaderProps={{ type: 'dots' }}
             onClick={async () => {
               if (isEmpty(value)) {
-                notifications.show({ color: 'red', message: '文件夹名称不能为空' });
+                notifications.show({ color: 'red', message: '名称不能为空' });
+                return;
+              }
+
+              if (value === props.name) {
+                props.onClose();
                 return;
               }
 
               try {
                 setSaveLoading(true);
-                await Mkdir({
-                  node_id: props.location.node_id,
-                  location: props.location.name,
-                  path: `${props.path}/${value}`,
-                });
 
+                await MoveFile(
+                  {
+                    node_id: props.location.node_id,
+                    location: props.location.name,
+                    path: `${props.path}/${props.name}`,
+                  },
+                  {
+                    node_id: props.location.node_id,
+                    location: props.location.name,
+                    path: `${props.path}/${value}`,
+                  },
+                );
+
+                await new Promise((resolve) => setTimeout(resolve, 500));
                 notifications.show({
                   color: 'green',
                   message: (
                     <Text size="sm">
-                      文件夹 <Code>{value}</Code> 创建成功
+                      重命名文件 <Code>{props.name}</Code> 成功
                     </Text>
                   ),
                 });

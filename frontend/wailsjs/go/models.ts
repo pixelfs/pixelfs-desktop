@@ -17,9 +17,9 @@ export namespace anypb {
 
 }
 
-export namespace models {
+export namespace services {
 	
-	export class Copy {
+	export class TransportManager {
 	    ID: number;
 	    // Go type: time
 	    CreatedAt: any;
@@ -27,14 +27,16 @@ export namespace models {
 	    UpdatedAt: any;
 	    // Go type: gorm
 	    DeletedAt: any;
+	    Type: string;
 	    NodeId: string;
 	    Location: string;
 	    Path: string;
 	    Status: string;
 	    Progress: number;
+	    LocalPath?: string;
 	
 	    static createFrom(source: any = {}) {
-	        return new Copy(source);
+	        return new TransportManager(source);
 	    }
 	
 	    constructor(source: any = {}) {
@@ -43,111 +45,13 @@ export namespace models {
 	        this.CreatedAt = this.convertValues(source["CreatedAt"], null);
 	        this.UpdatedAt = this.convertValues(source["UpdatedAt"], null);
 	        this.DeletedAt = this.convertValues(source["DeletedAt"], null);
+	        this.Type = source["Type"];
 	        this.NodeId = source["NodeId"];
 	        this.Location = source["Location"];
 	        this.Path = source["Path"];
 	        this.Status = source["Status"];
 	        this.Progress = source["Progress"];
-	    }
-	
-		convertValues(a: any, classs: any, asMap: boolean = false): any {
-		    if (!a) {
-		        return a;
-		    }
-		    if (a.slice && a.map) {
-		        return (a as any[]).map(elem => this.convertValues(elem, classs));
-		    } else if ("object" === typeof a) {
-		        if (asMap) {
-		            for (const key of Object.keys(a)) {
-		                a[key] = new classs(a[key]);
-		            }
-		            return a;
-		        }
-		        return new classs(a);
-		    }
-		    return a;
-		}
-	}
-	export class Download {
-	    ID: number;
-	    // Go type: time
-	    CreatedAt: any;
-	    // Go type: time
-	    UpdatedAt: any;
-	    // Go type: gorm
-	    DeletedAt: any;
-	    NodeId: string;
-	    Location: string;
-	    Path: string;
-	    LocalPath: string;
-	    Status: string;
-	    Progress: number;
-	
-	    static createFrom(source: any = {}) {
-	        return new Download(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.ID = source["ID"];
-	        this.CreatedAt = this.convertValues(source["CreatedAt"], null);
-	        this.UpdatedAt = this.convertValues(source["UpdatedAt"], null);
-	        this.DeletedAt = this.convertValues(source["DeletedAt"], null);
-	        this.NodeId = source["NodeId"];
-	        this.Location = source["Location"];
-	        this.Path = source["Path"];
 	        this.LocalPath = source["LocalPath"];
-	        this.Status = source["Status"];
-	        this.Progress = source["Progress"];
-	    }
-	
-		convertValues(a: any, classs: any, asMap: boolean = false): any {
-		    if (!a) {
-		        return a;
-		    }
-		    if (a.slice && a.map) {
-		        return (a as any[]).map(elem => this.convertValues(elem, classs));
-		    } else if ("object" === typeof a) {
-		        if (asMap) {
-		            for (const key of Object.keys(a)) {
-		                a[key] = new classs(a[key]);
-		            }
-		            return a;
-		        }
-		        return new classs(a);
-		    }
-		    return a;
-		}
-	}
-	export class Upload {
-	    ID: number;
-	    // Go type: time
-	    CreatedAt: any;
-	    // Go type: time
-	    UpdatedAt: any;
-	    // Go type: gorm
-	    DeletedAt: any;
-	    NodeId: string;
-	    Location: string;
-	    Path: string;
-	    Status: string;
-	    Progress: number;
-	
-	    static createFrom(source: any = {}) {
-	        return new Upload(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.ID = source["ID"];
-	        this.CreatedAt = this.convertValues(source["CreatedAt"], null);
-	        this.UpdatedAt = this.convertValues(source["UpdatedAt"], null);
-	        this.DeletedAt = this.convertValues(source["DeletedAt"], null);
-	        this.NodeId = source["NodeId"];
-	        this.Location = source["Location"];
-	        this.Path = source["Path"];
-	        this.Status = source["Status"];
-	        this.Progress = source["Progress"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -352,10 +256,11 @@ export namespace v1 {
 	    name?: string;
 	    type?: number;
 	    size?: number;
-	    perm?: number;
+	    mode?: number;
 	    hash?: string;
 	    user?: string;
 	    duration?: number;
+	    platform?: string;
 	    modified_at?: timestamppb.Timestamp;
 	    extensions?: Record<string, anypb.Any>;
 	
@@ -368,10 +273,11 @@ export namespace v1 {
 	        this.name = source["name"];
 	        this.type = source["type"];
 	        this.size = source["size"];
-	        this.perm = source["perm"];
+	        this.mode = source["mode"];
 	        this.hash = source["hash"];
 	        this.user = source["user"];
 	        this.duration = source["duration"];
+	        this.platform = source["platform"];
 	        this.modified_at = this.convertValues(source["modified_at"], timestamppb.Timestamp);
 	        this.extensions = this.convertValues(source["extensions"], anypb.Any, true);
 	    }
@@ -525,6 +431,90 @@ export namespace v1 {
 	        this.prefix = source["prefix"];
 	        this.path_style = source["path_style"];
 	    }
+	}
+	export class SyncConfig {
+	    interval?: number;
+	    duplex?: boolean;
+	    limit?: number;
+	    log?: string;
+	    last_synced_at?: timestamppb.Timestamp;
+	
+	    static createFrom(source: any = {}) {
+	        return new SyncConfig(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.interval = source["interval"];
+	        this.duplex = source["duplex"];
+	        this.limit = source["limit"];
+	        this.log = source["log"];
+	        this.last_synced_at = this.convertValues(source["last_synced_at"], timestamppb.Timestamp);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class Sync {
+	    id?: string;
+	    src_node_id?: string;
+	    dest_node_id?: string;
+	    name?: string;
+	    enabled?: boolean;
+	    status?: number;
+	    src_context?: FileContext;
+	    dest_context?: FileContext;
+	    config?: SyncConfig;
+	
+	    static createFrom(source: any = {}) {
+	        return new Sync(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.src_node_id = source["src_node_id"];
+	        this.dest_node_id = source["dest_node_id"];
+	        this.name = source["name"];
+	        this.enabled = source["enabled"];
+	        this.status = source["status"];
+	        this.src_context = this.convertValues(source["src_context"], FileContext);
+	        this.dest_context = this.convertValues(source["dest_context"], FileContext);
+	        this.config = this.convertValues(source["config"], SyncConfig);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
 	}
 
 }

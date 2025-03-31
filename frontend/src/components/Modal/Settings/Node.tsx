@@ -1,5 +1,5 @@
 import { isEmpty } from 'lodash-es';
-import { ActionIcon, Button, Center, Group, Loader, Table, Text, useMantineColorScheme } from '@mantine/core';
+import { ActionIcon, Button, Center, Code, Group, Loader, Table, Text, useMantineColorScheme } from '@mantine/core';
 import { useEffect, useState } from 'react';
 import { RiDeleteBinLine } from 'react-icons/ri';
 import { GrRefresh } from 'react-icons/gr';
@@ -107,6 +107,14 @@ export function Node(props: { opened: boolean }) {
 
                         try {
                           await RemoveNode(node.id!);
+                          notifications.show({
+                            color: 'green',
+                            message: (
+                              <Text size="sm">
+                                节点 <Code>{node.name}</Code> 删除成功
+                              </Text>
+                            ),
+                          });
                           fetchData();
                         } catch (error: any) {
                           notifications.show({ color: 'red', message: error });

@@ -17,6 +17,10 @@ export function PlayVideo(arg1:v1.FileContext):Promise<void>;
 
 export function RemoveFile(arg1:v1.FileContext):Promise<void>;
 
+export function RenameFile(arg1:v1.FileContext,arg2:v1.FileContext):Promise<void>;
+
 export function Start(arg1:context.Context):Promise<void>;
+
+export function StatFile(arg1:v1.FileContext):Promise<v1.File>;
 
 export function UploadFile(arg1:v1.FileContext):Promise<void>;

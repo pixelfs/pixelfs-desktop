@@ -13,11 +13,11 @@ import (
 	"time"
 
 	"connectrpc.com/connect"
-	"github.com/pixelfs/pixelfs-desktop/backend/models"
 	"github.com/pixelfs/pixelfs/config"
 	pb "github.com/pixelfs/pixelfs/gen/pixelfs/v1"
 	"github.com/pixelfs/pixelfs/util"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type FileService struct {
@@ -62,6 +62,21 @@ func (f *FileService) GetFileList(ctx *pb.FileContext) ([]*pb.File, error) {
 	return response.Msg.GetFiles(), nil
 }
 
+func (f *FileService) StatFile(ctx *pb.FileContext) (*pb.File, error) {
+	response, err := rpc.FileSystemService.Stat(
+		context.Background(),
+		connect.NewRequest(&pb.FileStatRequest{
+			Context: ctx,
+		}),
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return response.Msg.GetFile(), nil
+}
+
 func (f *FileService) RemoveFile(ctx *pb.FileContext) error {
 	_, err := rpc.FileSystemService.Remove(
 		context.Background(),
@@ -89,6 +104,18 @@ func (f *FileService) Mkdir(ctx *pb.FileContext) error {
 	}
 
 	return nil
+}
+
+func (f *FileService) RenameFile(src *pb.FileContext, dest *pb.FileContext) error {
+	_, err := rpc.FileSystemService.Move(
+		context.Background(),
+		connect.NewRequest(&pb.FileMoveRequest{
+			Src:  src,
+			Dest: dest,
+		}),
+	)
+
+	return err
 }
 
 func (f *FileService) MoveFile(src *pb.FileContext, dest *pb.FileContext) error {
@@ -139,7 +166,15 @@ func (f *FileService) CopyFile(src *pb.FileContext, dest *pb.FileContext) error 
 
 func (f *FileService) copyFile(src *pb.FileContext, dest *pb.FileContext) error {
 	if src.NodeId == dest.NodeId {
-		copyModel := models.Copy{NodeId: src.NodeId, Location: src.Location, Path: src.Path, Status: "copying", Progress: 0}
+		copyModel := TransportManager{
+			Type:     "copy",
+			NodeId:   src.NodeId,
+			Location: src.Location,
+			Path:     src.Path,
+			Status:   "copying",
+			Progress: 0,
+		}
+
 		if err := database.db.Create(&copyModel).Error; err != nil {
 			return err
 		}
@@ -157,7 +192,7 @@ func (f *FileService) copyFile(src *pb.FileContext, dest *pb.FileContext) error 
 			return err
 		}
 
-		if err = database.db.Model(copyModel).Updates(models.Copy{Progress: 100, Status: "success"}).Error; err != nil {
+		if err = database.db.Model(copyModel).Updates(TransportManager{Progress: 100, Status: "success"}).Error; err != nil {
 			return err
 		}
 
@@ -180,6 +215,7 @@ func (f *FileService) copyFile(src *pb.FileContext, dest *pb.FileContext) error 
 			context.Background(),
 			connect.NewRequest(&pb.FileMkdirRequest{
 				Context: dest,
+				Mtime:   stat.Msg.File.ModifiedAt,
 			}),
 		)
 		if err != nil {
@@ -227,7 +263,15 @@ func (f *FileService) copyFile(src *pb.FileContext, dest *pb.FileContext) error 
 	}
 
 	blockCount := stat.Msg.File.Size / locationRsp.Msg.Location.BlockSize
-	copyModel := models.Copy{NodeId: src.NodeId, Location: src.Location, Path: src.Path, Status: "copying", Progress: 0}
+	copyModel := TransportManager{
+		Type:     "copy",
+		NodeId:   src.NodeId,
+		Location: src.Location,
+		Path:     src.Path,
+		Status:   "copying",
+		Progress: 0,
+	}
+
 	if err = database.db.Create(&copyModel).Error; err != nil {
 		return err
 	}
@@ -280,8 +324,23 @@ func (f *FileService) copyFile(src *pb.FileContext, dest *pb.FileContext) error 
 		status := "copying"
 		if index == blockCount {
 			status = "success"
+
+			_, err = rpc.FileSystemService.Chtimes(
+				context.Background(),
+				connect.NewRequest(&pb.FileChtimesRequest{
+					Context: dest,
+					Atime:   timestamppb.Now(),
+					Mtime:   stat.Msg.File.ModifiedAt,
+				}),
+			)
+
+			if err != nil {
+				database.db.Model(&copyModel).Update("status", "failed")
+				return err
+			}
 		}
-		if err = database.db.Model(copyModel).Updates(models.Copy{Progress: progress, Status: status}).Error; err != nil {
+
+		if err = database.db.Model(copyModel).Updates(TransportManager{Progress: progress, Status: status}).Error; err != nil {
 			return err
 		}
 	}
@@ -389,7 +448,16 @@ func (f *FileService) downloadFile(ctx *pb.FileContext, output string, thread in
 	}
 
 	blockCount := stat.Msg.File.Size / locationRsp.Msg.Location.BlockSize
-	downloadModel := models.Download{NodeId: ctx.NodeId, Location: ctx.Location, Path: ctx.Path, LocalPath: output, Status: "downloading", Progress: 0}
+	downloadModel := TransportManager{
+		Type:      "download",
+		NodeId:    ctx.NodeId,
+		Location:  ctx.Location,
+		Path:      ctx.Path,
+		LocalPath: &output,
+		Status:    "downloading",
+		Progress:  0,
+	}
+
 	if err = database.db.Create(&downloadModel).Error; err != nil {
 		return err
 	}
@@ -487,7 +555,7 @@ func (f *FileService) downloadFile(ctx *pb.FileContext, output string, thread in
 			if writeIndex == blockCount {
 				status = "success"
 			}
-			if err = database.db.Model(downloadModel).Updates(models.Download{Progress: progress, Status: status}).Error; err != nil {
+			if err = database.db.Model(downloadModel).Updates(TransportManager{Progress: progress, Status: status}).Error; err != nil {
 				return err
 			}
 
@@ -512,7 +580,15 @@ func (f *FileService) UploadFile(ctx *pb.FileContext) error {
 	_, fileName := filepath.Split(inputFilePath)
 	ctx.Path = filepath.Join(ctx.Path, fileName)
 
-	uploadModel := models.Upload{NodeId: ctx.NodeId, Location: ctx.Location, Path: ctx.Path, Status: "uploading", Progress: 0}
+	uploadModel := TransportManager{
+		Type:     "upload",
+		NodeId:   ctx.NodeId,
+		Location: ctx.Location,
+		Path:     ctx.Path,
+		Status:   "uploading",
+		Progress: 0,
+	}
+
 	if err := database.db.Create(&uploadModel).Error; err != nil {
 		return err
 	}
@@ -531,7 +607,7 @@ func (f *FileService) UploadFile(ctx *pb.FileContext) error {
 	return nil
 }
 
-func (f *FileService) uploadFile(ctx *pb.FileContext, inputFilePath string, uploadModel *models.Upload) error {
+func (f *FileService) uploadFile(ctx *pb.FileContext, inputFilePath string, uploadModel *TransportManager) error {
 	locationRsp, err := rpc.LocationService.GetLocationByContext(
 		context.Background(),
 		connect.NewRequest(&pb.GetLocationByContextRequest{
@@ -612,7 +688,7 @@ func (f *FileService) uploadFile(ctx *pb.FileContext, inputFilePath string, uplo
 		if index == blockCount {
 			status = "success"
 		}
-		if err = database.db.Model(uploadModel).Updates(models.Upload{Progress: progress, Status: status}).Error; err != nil {
+		if err = database.db.Model(uploadModel).Updates(TransportManager{Progress: progress, Status: status}).Error; err != nil {
 			return err
 		}
 	}

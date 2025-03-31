@@ -3,7 +3,10 @@ package services
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
+
+	"github.com/pixelfs/pixelfs/util"
 )
 
 type PreferencesService struct{}
@@ -67,4 +70,35 @@ func (p *PreferencesService) GetDownloadThreads() (int, error) {
 
 func (p *PreferencesService) SetDownloadThreads(threads int) error {
 	return localStorage.SetLocalStorage("downloadThreads", threads)
+}
+
+func (p *PreferencesService) ReadLog(reverse bool) ([]string, error) {
+	home, err := util.GetHomeDir()
+	if err != nil {
+		return nil, err
+	}
+
+	logFile := filepath.Join(filepath.Join(home, "logs"), "pixelfs.log")
+	content, err := os.ReadFile(logFile)
+	if err != nil {
+		return nil, err
+	}
+
+	lines := strings.Split(string(content), "\n")
+	if reverse {
+		for i, j := 0, len(lines)-1; i < j; i, j = i+1, j-1 {
+			lines[i], lines[j] = lines[j], lines[i]
+		}
+	}
+
+	return lines, nil
+}
+
+func (p *PreferencesService) ClearLog() error {
+	home, err := util.GetHomeDir()
+	if err != nil {
+		return err
+	}
+
+	return os.WriteFile(filepath.Join(home, "logs", "pixelfs.log"), []byte{}, 0644)
 }

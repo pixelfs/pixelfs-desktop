@@ -66,6 +66,7 @@ func main() {
 	storageSvc := services.Storage()
 	locationSvc := services.Location()
 	databaseSvc := services.Database()
+	fileSyncSvc := services.FileSync()
 	preferencesSvc := services.Preferences()
 	localStorageSvc := services.LocalStorage()
 
@@ -84,6 +85,7 @@ func main() {
 		Width:                    1200,
 		Height:                   768,
 		Menu:                     appMenu,
+		HideWindowOnClose:        true,
 		EnableDefaultContextMenu: true,
 		AssetServer:              &assetserver.Options{Assets: assets},
 		BackgroundColour:         options.NewRGBA(255, 255, 255, 0),
@@ -106,6 +108,7 @@ func main() {
 			storageSvc,
 			locationSvc,
 			databaseSvc,
+			fileSyncSvc,
 			preferencesSvc,
 			localStorageSvc,
 		},
