@@ -17,19 +17,21 @@ import { FiPlus } from 'react-icons/fi';
 import { CiSettings } from 'react-icons/ci';
 import { useNavigate } from 'react-router-dom';
 import { isEmpty } from 'lodash-es';
-import { v1 } from '../../wailsjs/go/models';
 import { isMacOS, loadEnvironment } from '../utils/platform';
-import { GetUserInfo } from '../../wailsjs/go/services/UserService';
-import { GetLocalStorage, SetLocalStorage } from '../../wailsjs/go/services/LocalStorageService';
 import { LocationList } from '../components/LocationList';
 import { FileManager } from '../components/FileManager';
 import { Settings, TransportModal } from '../components/Modal';
-import { GetUserToken, Logout } from '../../wailsjs/go/services/AuthService';
-import { StartWebsocketClient, StopWebsocketClient } from '../../wailsjs/go/services/SystemService';
 import { CreateLocation } from '../components/Modal/CreateLocation';
 import { notifications } from '@mantine/notifications';
 import { modals } from '@mantine/modals';
-import { GetNodes } from '../../wailsjs/go/services/NodeService';
+import {
+  NodeService,
+  UserService,
+  LocalStorageService,
+  SystemService,
+  AuthService,
+} from '../../bindings/github.com/pixelfs/pixelfs-desktop/services';
+import * as v1 from '../../bindings/github.com/pixelfs/pixelfs/gen/pixelfs/v1';
 
 export function HomePage() {
   const navigate = useNavigate();
@@ -51,36 +53,36 @@ export function HomePage() {
       setError('');
       setUserInfo(undefined);
 
-      const userInfo = await GetUserInfo();
-      const nodeList = await GetNodes();
+      const userInfo = await UserService.GetUserInfo();
+      const nodeList = (await NodeService.GetNodes()).filter((n) => !!n);
 
       // Get selected node id from storage
-      const selectedNodeId = await GetLocalStorage('selectedNodeId');
+      const selectedNodeId = await LocalStorageService.GetLocalStorage('selectedNodeId');
       const nodeId =
         !isEmpty(selectedNodeId) && nodeList.find((node) => node.id == selectedNodeId)
           ? selectedNodeId
           : nodeList[0].id;
 
-      await SetLocalStorage('selectedNodeId', nodeId);
+      await LocalStorageService.SetLocalStorage('selectedNodeId', nodeId);
       setNodeId(nodeId);
       setNodeList(nodeList);
-      setUserInfo(userInfo);
+      setUserInfo(userInfo!);
       setLoading(false);
     } catch (error: any) {
-      setError(error);
+      setError(error.message);
       setLoading(false);
     }
   };
 
   useEffect(() => {
     const init = async () => {
-      if (isEmpty(await GetUserToken())) {
+      if (isEmpty(await AuthService.GetUserToken())) {
         navigate('/login');
         return;
       }
 
       await loadEnvironment();
-      await StartWebsocketClient();
+      await SystemService.StartWebsocketClient();
       await fetchData();
     };
 
@@ -157,7 +159,7 @@ export function HomePage() {
                 value={nodeId}
                 onChange={(event) => {
                   setNodeId(event.currentTarget.value);
-                  SetLocalStorage('selectedNodeId', event.currentTarget.value);
+                  LocalStorageService.SetLocalStorage('selectedNodeId', event.currentTarget.value);
                 }}
                 data={nodeList.map((node) => ({ label: `${node.name ?? ''}(${node.id})`, value: node.id! }))}
               />
@@ -203,11 +205,11 @@ export function HomePage() {
                     confirmProps: { color: 'red' },
                     onConfirm: async () => {
                       try {
-                        await Logout();
-                        await StopWebsocketClient();
+                        await AuthService.Logout();
+                        await SystemService.StopWebsocketClient();
                         navigate('/login');
                       } catch (error: any) {
-                        notifications.show({ color: 'red', message: error });
+                        notifications.show({ color: 'red', message: error.message });
                       }
                     },
                   })
@@ -220,7 +222,7 @@ export function HomePage() {
         </AppShell.Navbar>
         <AppShell.Main>
           {!isEmpty(nodeId) && !isEmpty(location) ? (
-            <FileManager location={location} path={path} onChangePath={(path) => setPath(path)} />
+            <FileManager location={location!} path={path} onChangePath={(path) => setPath(path)} />
           ) : (
             <>
               <Center pt={300}>

@@ -11,20 +11,15 @@ import {
   Tooltip,
   useMantineColorScheme,
 } from '@mantine/core';
-import { services } from '../../../../wailsjs/go/models';
-import {
-  DeleteTransportManager,
-  DeleteTransportManagerByType,
-  GetTransportManagers,
-} from '../../../../wailsjs/go/services/DatabaseService';
 import { useEffect, useState } from 'react';
 import { RiDeleteBinLine } from 'react-icons/ri';
 import { GrRefresh } from 'react-icons/gr';
 import { FiMoreHorizontal } from 'react-icons/fi';
 import { IoMdOpen } from 'react-icons/io';
-import { OpenFile } from '../../../../wailsjs/go/services/SystemService';
 import { notifications } from '@mantine/notifications';
 import { modals } from '@mantine/modals';
+import { DatabaseService, SystemService } from '../../../../bindings/github.com/pixelfs/pixelfs-desktop/services';
+import * as services from '../../../../bindings/github.com/pixelfs/pixelfs-desktop/services';
 
 export function Download(props: { opened: boolean }) {
   const { colorScheme } = useMantineColorScheme();
@@ -34,7 +29,7 @@ export function Download(props: { opened: boolean }) {
   const fetchData = async () => {
     try {
       setLoading(true);
-      setDownloadList(await GetTransportManagers('download'));
+      setDownloadList((await DatabaseService.GetTransportManagers('download')).filter((t) => !!t));
       setLoading(false);
     } catch (e) {
       setLoading(false);
@@ -75,10 +70,10 @@ export function Download(props: { opened: boolean }) {
               confirmProps: { color: 'red' },
               onConfirm: async () => {
                 try {
-                  await DeleteTransportManagerByType('download');
+                  await DatabaseService.DeleteTransportManagerByType('download');
                   fetchData();
                 } catch (error: any) {
-                  notifications.show({ color: 'red', message: error });
+                  notifications.show({ color: 'red', message: error.message });
                 }
               },
             })
@@ -140,9 +135,9 @@ export function Download(props: { opened: boolean }) {
                             return;
                           }
 
-                          await OpenFile(download.LocalPath ?? '');
+                          await SystemService.OpenFile(download.LocalPath ?? '');
                         } catch (error: any) {
-                          notifications.show({ color: 'red', message: error });
+                          notifications.show({ color: 'red', message: error.message });
                         }
                       }}
                     >
@@ -152,7 +147,7 @@ export function Download(props: { opened: boolean }) {
                       color="red"
                       leftSection={<RiDeleteBinLine size={14} />}
                       onClick={async () => {
-                        await DeleteTransportManager(download.ID);
+                        await DatabaseService.DeleteTransportManager(download.ID);
                         fetchData();
                       }}
                     >

@@ -1,10 +1,10 @@
 import { Center, Group, Loader, Paper, Text } from '@mantine/core';
 import { GoogleButton } from '../components/GoogleButton';
 import { GithubButton } from '../components/GithubButton';
-import { Login } from '../../wailsjs/go/services/AuthService';
 import { notifications } from '@mantine/notifications';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { AuthService } from '../../bindings/github.com/pixelfs/pixelfs-desktop/services';
 
 export function LoginPage() {
   const navigate = useNavigate();
@@ -13,12 +13,12 @@ export function LoginPage() {
   const login = async () => {
     try {
       setLoading(true);
-      await Login();
+      await AuthService.Login();
       setLoading(false);
       navigate('/');
     } catch (error: any) {
       setLoading(false);
-      notifications.show({ color: 'red', message: error });
+      notifications.show({ color: 'red', message: error.message });
     }
   };
 

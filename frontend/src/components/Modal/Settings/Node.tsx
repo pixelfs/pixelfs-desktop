@@ -3,26 +3,26 @@ import { ActionIcon, Button, Center, Code, Group, Loader, Table, Text, useMantin
 import { useEffect, useState } from 'react';
 import { RiDeleteBinLine } from 'react-icons/ri';
 import { GrRefresh } from 'react-icons/gr';
-import { GetNodes, RemoveNode } from '../../../../wailsjs/go/services/NodeService';
-import { v1 } from '../../../../wailsjs/go/models';
 import { notifications } from '@mantine/notifications';
 import { modals } from '@mantine/modals';
+import { NodeService } from '../../../../bindings/github.com/pixelfs/pixelfs-desktop/services';
+import * as v1 from '../../../../bindings/github.com/pixelfs/pixelfs/gen/pixelfs/v1';
 
 export function Node(props: { opened: boolean }) {
   const { colorScheme } = useMantineColorScheme();
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>('');
-  const [nodeList, setNodeList] = useState<Array<v1.Node>>([]);
+  const [nodeList, setNodeList] = useState<Array<v1.Node | null>>([]);
 
   const fetchData = async () => {
     try {
       setError('');
       setLoading(true);
 
-      setNodeList(await GetNodes());
+      setNodeList(await NodeService.GetNodes());
       setLoading(false);
     } catch (error: any) {
-      setError(error);
+      setError(error.message);
       setLoading(false);
     }
   };
@@ -84,10 +84,10 @@ export function Node(props: { opened: boolean }) {
         </Table.Thead>
         <Table.Tbody>
           {nodeList.map((node, _) => (
-            <Table.Tr key={node.id}>
-              <Table.Td>{node.id}</Table.Td>
-              <Table.Td>{node.name}</Table.Td>
-              <Table.Td>{node.status === 1 ? '在线' : '离线'}</Table.Td>
+            <Table.Tr key={node?.id}>
+              <Table.Td>{node?.id}</Table.Td>
+              <Table.Td>{node?.name}</Table.Td>
+              <Table.Td>{node?.status === 1 ? '在线' : '离线'}</Table.Td>
               <Table.Td>
                 <ActionIcon
                   variant="transparent"
@@ -100,24 +100,24 @@ export function Node(props: { opened: boolean }) {
                       labels: { confirm: '删除', cancel: '取消' },
                       confirmProps: { color: 'red' },
                       onConfirm: async () => {
-                        if (node.status === 1) {
+                        if (node?.status === 1) {
                           notifications.show({ color: 'red', message: '节点在线时无法删除' });
                           return;
                         }
 
                         try {
-                          await RemoveNode(node.id!);
+                          await NodeService.RemoveNode(node?.id!);
                           notifications.show({
                             color: 'green',
                             message: (
                               <Text size="sm">
-                                节点 <Code>{node.name}</Code> 删除成功
+                                节点 <Code>{node?.name}</Code> 删除成功
                               </Text>
                             ),
                           });
                           fetchData();
                         } catch (error: any) {
-                          notifications.show({ color: 'red', message: error });
+                          notifications.show({ color: 'red', message: error.message });
                         }
                       },
                     })

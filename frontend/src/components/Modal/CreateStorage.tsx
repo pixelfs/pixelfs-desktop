@@ -3,8 +3,8 @@ import { useForm } from '@mantine/form';
 import { isEmpty } from 'lodash-es';
 import { useEffect, useState } from 'react';
 import { notifications } from '@mantine/notifications';
-import { AddS3Storage } from '../../../wailsjs/go/services/StorageService';
-import { v1 } from '../../../wailsjs/go/models';
+import { StorageService } from '../../../bindings/github.com/pixelfs/pixelfs-desktop/services';
+import * as v1 from '../../../bindings/github.com/pixelfs/pixelfs/gen/pixelfs/v1';
 
 export function CreateStorage(props: { opened: boolean; onClose: () => void; onCreated: () => void }) {
   const [saveLoading, setSaveLoading] = useState<boolean>(false);
@@ -56,7 +56,7 @@ export function CreateStorage(props: { opened: boolean; onClose: () => void; onC
                 path_style: values.pathStyle === 'on',
               });
 
-              await AddS3Storage(values.name, config, values.network === 'public' ? 0 : 1);
+              await StorageService.AddS3Storage(values.name, config, values.network === 'public' ? 0 : 1);
               notifications.show({
                 color: 'green',
                 message: (
@@ -72,7 +72,7 @@ export function CreateStorage(props: { opened: boolean; onClose: () => void; onC
               setSaveLoading(false);
               notifications.show({
                 color: 'red',
-                message: <Text size="sm">请检查填写的服务端信息是否正确，{error}</Text>,
+                message: <Text size="sm">请检查填写的服务端信息是否正确，{error.message}</Text>,
               });
             }
           })}

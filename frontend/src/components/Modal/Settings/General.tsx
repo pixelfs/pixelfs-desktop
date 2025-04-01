@@ -13,14 +13,8 @@ import {
 import { useForm } from '@mantine/form';
 import { isEmpty } from 'lodash-es';
 import { useEffect } from 'react';
-import {
-  GetDownloadPath,
-  GetDownloadThreads,
-  SetDownloadPath,
-  SetDownloadThreads,
-} from '../../../../wailsjs/go/services/PreferencesService';
-import { SelectDirectoryDialog } from '../../../../wailsjs/go/services/SystemService';
 import { notifications } from '@mantine/notifications';
+import { PreferencesService, SystemService } from '../../../../bindings/github.com/pixelfs/pixelfs-desktop/services';
 
 export function General(props: { opened: boolean }) {
   const { colorScheme, setColorScheme } = useMantineColorScheme();
@@ -42,8 +36,8 @@ export function General(props: { opened: boolean }) {
     if (props.opened) {
       const init = async () => {
         form.setValues({
-          downloadPath: await GetDownloadPath(),
-          downloadThreads: await GetDownloadThreads(),
+          downloadPath: await PreferencesService.GetDownloadPath(),
+          downloadThreads: await PreferencesService.GetDownloadThreads(),
         });
       };
 
@@ -56,12 +50,12 @@ export function General(props: { opened: boolean }) {
       <form
         onSubmit={form.onSubmit(async (values) => {
           try {
-            await SetDownloadPath(values.downloadPath);
-            await SetDownloadThreads(values.downloadThreads);
+            await PreferencesService.SetDownloadPath(values.downloadPath);
+            await PreferencesService.SetDownloadThreads(values.downloadThreads);
 
             notifications.show({ color: 'green', message: '保存成功' });
           } catch (error: any) {
-            notifications.show({ color: 'red', message: error });
+            notifications.show({ color: 'red', message: error.message });
           }
         })}
       >
@@ -97,7 +91,7 @@ export function General(props: { opened: boolean }) {
                     key={form.key('downloadPath')}
                     {...form.getInputProps('downloadPath')}
                     onClick={async () => {
-                      const downloadPath = await SelectDirectoryDialog('选择下载路径');
+                      const downloadPath = await SystemService.SelectDirectoryDialog('选择下载路径');
                       if (!isEmpty(downloadPath)) form.setValues({ downloadPath });
                     }}
                   />

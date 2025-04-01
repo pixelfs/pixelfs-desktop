@@ -1,36 +1,101 @@
 package main
 
 import (
-	"context"
 	"embed"
-	"fmt"
 	"os"
 	"runtime"
 
-	"github.com/pixelfs/pixelfs-desktop/backend/services"
+	"github.com/pixelfs/pixelfs-desktop/services"
 	"github.com/pixelfs/pixelfs/config"
 	"github.com/pixelfs/pixelfs/log"
 	"github.com/rs/zerolog"
-	"github.com/wailsapp/wails/v2"
-	"github.com/wailsapp/wails/v2/pkg/menu"
-	"github.com/wailsapp/wails/v2/pkg/options"
-	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
-	"github.com/wailsapp/wails/v2/pkg/options/linux"
-	"github.com/wailsapp/wails/v2/pkg/options/mac"
-	"github.com/wailsapp/wails/v2/pkg/options/windows"
+	"github.com/wailsapp/wails/v3/pkg/application"
+	"github.com/wailsapp/wails/v3/pkg/events"
 )
 
 //go:embed all:frontend/dist
 var assets embed.FS
 
-//go:embed build/appicon.png
-var icon []byte
-
-var version = "1.0.0"
+//go:embed build/windows/icons.ico
+var winIcon []byte
 
 const appName = "PixelFS"
 
 func main() {
+	app := application.New(application.Options{
+		Name:        appName,
+		Description: "A cross-device file system, Transfer files based on s3-protocol.",
+		Services: []application.Service{
+			application.NewService(services.NewAuthService()),
+			application.NewService(services.NewDatabaseService()),
+			application.NewService(services.NewFileService()),
+			application.NewService(services.NewFileSyncService()),
+			application.NewService(services.NewLocalStorageService()),
+			application.NewService(services.NewLocationService()),
+			application.NewService(services.NewNodeService()),
+			application.NewService(services.NewPreferencesService()),
+			application.NewService(services.NewStorageService()),
+			application.NewService(services.NewSystemService()),
+			application.NewService(services.NewUserService()),
+			application.NewService(services.NewUtilService()),
+		},
+		Assets: application.AssetOptions{
+			Handler: application.AssetFileServerFS(assets),
+		},
+		Mac: application.MacOptions{
+			ApplicationShouldTerminateAfterLastWindowClosed: true,
+		},
+	})
+
+	window := app.NewWebviewWindowWithOptions(application.WebviewWindowOptions{
+		Title:       appName,
+		Width:       1200,
+		Height:      768,
+		AlwaysOnTop: true,
+		Hidden:      false,
+		Mac: application.MacWindow{
+			Backdrop: application.MacBackdropTranslucent,
+			TitleBar: application.MacTitleBarHidden,
+		},
+		Windows: application.WindowsWindow{
+			HiddenOnTaskbar: true,
+		},
+		BackgroundColour: application.NewRGB(255, 255, 255),
+		URL:              "/",
+	})
+
+	window.RegisterHook(events.Common.WindowClosing, func(e *application.WindowEvent) {
+		if runtime.GOOS == "darwin" {
+			window.Minimise()
+		} else {
+			window.Hide()
+		}
+
+		e.Cancel()
+	})
+
+	menu := application.NewMenu()
+	menu.Add("打开应用").OnClick(func(ctx *application.Context) {
+		if runtime.GOOS == "darwin" {
+			window.UnMinimise()
+		} else {
+			window.Show()
+		}
+	})
+
+	menu.AddSeparator()
+	menu.Add("退出").OnClick(func(ctx *application.Context) { app.Quit() })
+
+	systray := app.NewSystemTray()
+	systray.SetIcon(winIcon)
+	systray.SetMenu(menu)
+
+	if err := app.Run(); err != nil {
+		log.Fatal().Err(err)
+	}
+}
+
+func init() {
 	cfgFile := os.Getenv("PIXELFS_CONFIG")
 	if cfgFile != "" {
 		err := config.LoadConfig(cfgFile, true)
@@ -56,86 +121,4 @@ func main() {
 
 	log.SetLoggerColors()
 	zerolog.SetGlobalLevel(logLevel)
-
-	// Create an instance of the app structure
-	userSvc := services.User()
-	fileSvc := services.File()
-	authSvc := services.Auth()
-	nodeSvc := services.Node()
-	systemSvc := services.System()
-	storageSvc := services.Storage()
-	locationSvc := services.Location()
-	databaseSvc := services.Database()
-	fileSyncSvc := services.FileSync()
-	preferencesSvc := services.Preferences()
-	localStorageSvc := services.LocalStorage()
-
-	// Menu
-	isMacOS := runtime.GOOS == "darwin"
-	appMenu := menu.NewMenu()
-	if isMacOS {
-		appMenu.Append(menu.AppMenu())
-		appMenu.Append(menu.EditMenu())
-		appMenu.Append(menu.WindowMenu())
-	}
-
-	// Create application with options
-	err = wails.Run(&options.App{
-		Title:                    "PixelFS",
-		Width:                    1200,
-		Height:                   768,
-		Menu:                     appMenu,
-		HideWindowOnClose:        true,
-		EnableDefaultContextMenu: true,
-		AssetServer:              &assetserver.Options{Assets: assets},
-		BackgroundColour:         options.NewRGBA(255, 255, 255, 0),
-		OnStartup: func(ctx context.Context) {
-			databaseSvc.Start(ctx)
-			authSvc.Start(ctx)
-			fileSvc.Start(ctx)
-			systemSvc.Start(ctx)
-			localStorageSvc.Start(ctx)
-		},
-		OnShutdown: func(ctx context.Context) {
-			systemSvc.Stop()
-		},
-		Bind: []interface{}{
-			userSvc,
-			fileSvc,
-			authSvc,
-			nodeSvc,
-			systemSvc,
-			storageSvc,
-			locationSvc,
-			databaseSvc,
-			fileSyncSvc,
-			preferencesSvc,
-			localStorageSvc,
-		},
-		Mac: &mac.Options{
-			TitleBar: mac.TitleBarHiddenInset(),
-			About: &mac.AboutInfo{
-				Title:   fmt.Sprintf("%s %s", appName, version),
-				Message: "A cross-device file system, Transfer files based on s3-protocol.\n\nCopyright © 2025",
-				Icon:    icon,
-			},
-			WebviewIsTransparent: false,
-			WindowIsTranslucent:  false,
-		},
-		Windows: &windows.Options{
-			WebviewIsTransparent:              false,
-			WindowIsTranslucent:               false,
-			DisableFramelessWindowDecorations: false,
-		},
-		Linux: &linux.Options{
-			ProgramName:         appName,
-			Icon:                icon,
-			WebviewGpuPolicy:    linux.WebviewGpuPolicyOnDemand,
-			WindowIsTranslucent: true,
-		},
-	})
-
-	if err != nil {
-		println("Error:", err.Error())
-	}
 }

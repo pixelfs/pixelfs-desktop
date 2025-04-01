@@ -15,21 +15,18 @@ import {
 import { useEffect, useState } from 'react';
 import { RiDeleteBinLine, RiEditLine } from 'react-icons/ri';
 import { GrRefresh } from 'react-icons/gr';
-import {
-  CleanStorageLink,
-  GetStorageLinks,
-  GetStorages,
-  RemoveStorageLink,
-} from '../../../../wailsjs/go/services/StorageService';
-import { v1 } from '../../../../wailsjs/go/models';
-import { FormatBytes } from '../../../../wailsjs/go/services/SystemService';
-import { GetNodes } from '../../../../wailsjs/go/services/NodeService';
-import { GetLocations } from '../../../../wailsjs/go/services/LocationService';
 import { FiMoreHorizontal } from 'react-icons/fi';
 import { MdOutlineCleaningServices } from 'react-icons/md';
 import { CreateStorageLink } from '../CreateStorageLink';
 import { modals } from '@mantine/modals';
 import { notifications } from '@mantine/notifications';
+import {
+  StorageService,
+  NodeService,
+  UtilService,
+  LocationService,
+} from '../../../../bindings/github.com/pixelfs/pixelfs-desktop/services';
+import * as v1 from '../../../../bindings/github.com/pixelfs/pixelfs/gen/pixelfs/v1';
 
 export function StorageLink(props: { opened: boolean }) {
   const { colorScheme } = useMantineColorScheme();
@@ -40,9 +37,9 @@ export function StorageLink(props: { opened: boolean }) {
   const [storageLinkList, setStorageLinkList] = useState<
     Array<
       v1.StorageLink & {
-        node?: v1.Node;
-        storage?: v1.Storage;
-        location?: v1.Location;
+        node?: v1.Node | null;
+        storage?: v1.Storage | null;
+        location?: v1.Location | null;
         format: { limitSize: string; usedSize: string };
       }
     >
@@ -84,12 +81,12 @@ export function StorageLink(props: { opened: boolean }) {
                 });
 
                 try {
-                  await CleanStorageLink(storageLinkId);
+                  await StorageService.CleanStorageLink(storageLinkId);
                   fetchData();
                   modals.close(modalId);
                 } catch (error: any) {
                   modals.close(modalId);
-                  notifications.show({ color: 'red', message: error });
+                  notifications.show({ color: 'red', message: error.message });
                 }
               }}
             >
@@ -137,7 +134,7 @@ export function StorageLink(props: { opened: boolean }) {
                 });
 
                 try {
-                  await RemoveStorageLink(storageLinkId);
+                  await StorageService.RemoveStorageLink(storageLinkId);
                   notifications.show({
                     color: 'green',
                     message: (
@@ -150,7 +147,7 @@ export function StorageLink(props: { opened: boolean }) {
                   modals.close(modalId);
                 } catch (error: any) {
                   modals.close(modalId);
-                  notifications.show({ color: 'red', message: error });
+                  notifications.show({ color: 'red', message: error.message });
                 }
               }}
             >
@@ -167,19 +164,19 @@ export function StorageLink(props: { opened: boolean }) {
       setError('');
       setLoading(true);
 
-      const nodeList = await GetNodes();
-      const storageList = await GetStorages();
-      const locationList = await GetLocations();
+      const nodeList = await NodeService.GetNodes();
+      const storageList = await StorageService.GetStorages();
+      const locationList = await LocationService.GetLocations();
 
       const storageLinkList = await Promise.all(
-        ((await GetStorageLinks()) ?? []).map(async (storageLink) => ({
+        ((await StorageService.GetStorageLinks()) ?? []).map(async (storageLink) => ({
           ...storageLink,
-          node: nodeList.find((node) => node.id === storageLink.node_id),
-          storage: storageList.find((storage) => storage.id === storageLink.storage_id),
-          location: locationList?.find((location) => location.id === storageLink.location_id),
+          node: nodeList.find((node) => node?.id === storageLink?.node_id),
+          storage: storageList.find((storage) => storage?.id === storageLink?.storage_id),
+          location: locationList?.find((location) => location?.id === storageLink?.location_id),
           format: {
-            limitSize: await FormatBytes(storageLink.limit_size ?? 0),
-            usedSize: await FormatBytes(storageLink.used_size ?? 0),
+            limitSize: await UtilService.FormatBytes(storageLink?.limit_size ?? 0),
+            usedSize: await UtilService.FormatBytes(storageLink?.used_size ?? 0),
           },
         })),
       );
@@ -187,7 +184,7 @@ export function StorageLink(props: { opened: boolean }) {
       setStorageLinkList(storageLinkList);
       setLoading(false);
     } catch (error: any) {
-      setError(error);
+      setError(error.message);
       setLoading(false);
     }
   };

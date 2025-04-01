@@ -1,5 +1,5 @@
 import { trim } from 'lodash-es';
-import { v1 } from '../../wailsjs/go/models';
+import * as v1 from '../../bindings/github.com/pixelfs/pixelfs/gen/pixelfs/v1';
 
 export function parsePathToContext(name: string): v1.FileContext {
   let nodeId = '';

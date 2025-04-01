@@ -11,14 +11,14 @@ import {
   useMantineColorScheme,
 } from '@mantine/core';
 import { useEffect, useState } from 'react';
-import { v1 } from '../../wailsjs/go/models';
-import { GetLocations, RemoveLocation } from '../../wailsjs/go/services/LocationService';
 import { FiMoreHorizontal } from 'react-icons/fi';
 import { RiDeleteBinLine, RiEditLine } from 'react-icons/ri';
 import { isEmpty } from 'lodash-es';
 import { notifications } from '@mantine/notifications';
 import { CreateLocation } from './Modal/CreateLocation';
 import { modals } from '@mantine/modals';
+import { LocationService } from '../../bindings/github.com/pixelfs/pixelfs-desktop/services';
+import * as v1 from '../../bindings/github.com/pixelfs/pixelfs/gen/pixelfs/v1';
 
 export function LocationList(props: {
   nodeId: string;
@@ -38,15 +38,17 @@ export function LocationList(props: {
     try {
       setError('');
       setLoading(true);
-      const locations = (await GetLocations())?.filter((location) => location.node_id === props.nodeId) ?? [];
 
-      const selectedLocation = locations.find((location) => location.id === props.selectedId);
+      const locations =
+        (await LocationService.GetLocations())?.filter((location) => location?.node_id === props.nodeId) ?? [];
+
+      const selectedLocation = locations.find((location) => location?.id === props.selectedId);
       props.onChangeLocation(isEmpty(selectedLocation) ? locations[0] : selectedLocation);
 
-      setLocations(locations);
+      setLocations(locations.filter((l) => !!l));
       setLoading(false);
     } catch (error: any) {
-      setError(error);
+      setError(error.message);
       setLoading(false);
     }
   };
@@ -147,10 +149,10 @@ export function LocationList(props: {
                     confirmProps: { color: 'red' },
                     onConfirm: async () => {
                       try {
-                        await RemoveLocation(location.id!);
+                        await LocationService.RemoveLocation(location.id!);
                         await fetchData();
                       } catch (error: any) {
-                        notifications.show({ color: 'red', message: error });
+                        notifications.show({ color: 'red', message: error.message });
                       }
                     },
                   })

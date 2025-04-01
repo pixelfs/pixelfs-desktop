@@ -15,13 +15,15 @@ import {
 import { useForm } from '@mantine/form';
 import { isEmpty } from 'lodash-es';
 import { useEffect, useState } from 'react';
-import { v1 } from '../../../wailsjs/go/models';
-import { GetNodes } from '../../../wailsjs/go/services/NodeService';
-import { AddStorageLink, GetStorages } from '../../../wailsjs/go/services/StorageService';
-import { GetLocations } from '../../../wailsjs/go/services/LocationService';
 import { CreateStorage } from './CreateStorage';
-import { FormatBytes, ParseBytes } from '../../../wailsjs/go/services/SystemService';
 import { notifications } from '@mantine/notifications';
+import {
+  LocationService,
+  StorageService,
+  UtilService,
+  NodeService,
+} from '../../../bindings/github.com/pixelfs/pixelfs-desktop/services';
+import * as v1 from '../../../bindings/github.com/pixelfs/pixelfs/gen/pixelfs/v1';
 
 export function CreateStorageLink(props: {
   opened: boolean;
@@ -59,16 +61,16 @@ export function CreateStorageLink(props: {
     const init = async () => {
       try {
         setLoading(true);
-        const nodeList = await GetNodes();
-        const storageList = await GetStorages();
-        const locationList = await GetLocations();
+        const nodeList = (await NodeService.GetNodes()).filter((n) => !!n);
+        const storageList = (await StorageService.GetStorages()).filter((n) => !!n);
+        const locationList = (await LocationService.GetLocations()).filter((n) => !!n);
 
         if (props.storageLink) {
           form.setValues({
             storage: props.storageLink.storage_id,
             node: props.storageLink.node_id,
             location: props.storageLink.location_id,
-            limitSize: await FormatBytes(props.storageLink.limit_size!),
+            limitSize: await UtilService.FormatBytes(props.storageLink.limit_size!),
             nodeOrLocation: props.storageLink.node_id ? 'node' : 'location',
           });
         } else {
@@ -90,7 +92,7 @@ export function CreateStorageLink(props: {
         setLoading(false);
       } catch (error: any) {
         setLoading(false);
-        notifications.show({ color: 'red', message: error });
+        notifications.show({ color: 'red', message: error.message });
       }
     };
 
@@ -110,7 +112,7 @@ export function CreateStorageLink(props: {
         onClose={() => setShowCreateStorage(false)}
         onCreated={async () => {
           setShowCreateStorage(false);
-          setStorageList(await GetStorages());
+          setStorageList((await StorageService.GetStorages()).filter((s) => !!s));
         }}
       />
 
@@ -124,11 +126,11 @@ export function CreateStorageLink(props: {
             onSubmit={form.onSubmit(async (values) => {
               try {
                 setSaveLoading(true);
-                await AddStorageLink({
+                await StorageService.AddStorageLink({
                   storage_id: values.storage,
                   node_id: values.nodeOrLocation === 'node' ? values.node : undefined,
                   location_id: values.nodeOrLocation === 'location' ? values.location : undefined,
-                  limit_size: await ParseBytes(values.limitSize),
+                  limit_size: await UtilService.ParseBytes(values.limitSize),
                 });
 
                 notifications.show({ color: 'green', message: `保存成功` });
@@ -136,7 +138,7 @@ export function CreateStorageLink(props: {
                 setSaveLoading(false);
               } catch (error: any) {
                 setSaveLoading(false);
-                notifications.show({ color: 'red', message: error });
+                notifications.show({ color: 'red', message: error.message });
               }
             })}
           >

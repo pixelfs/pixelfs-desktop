@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { LogViewer } from '@patternfly/react-log-viewer';
-import { ClearLog, ReadLog } from '../../../../wailsjs/go/services/PreferencesService';
 import { ActionIcon, Button, Center, Group, Loader, Text, useMantineColorScheme } from '@mantine/core';
 import { GrRefresh } from 'react-icons/gr';
 import { modals } from '@mantine/modals';
 import { notifications } from '@mantine/notifications';
+import { SystemService } from '../../../../bindings/github.com/pixelfs/pixelfs-desktop/services';
 
 export function Log(props: { opened: boolean }) {
   const { colorScheme } = useMantineColorScheme();
@@ -14,7 +14,7 @@ export function Log(props: { opened: boolean }) {
   const fetchData = async () => {
     try {
       setLoading(true);
-      setData(await ReadLog(true));
+      setData(await SystemService.ReadLog(true));
 
       await new Promise((resolve) => setTimeout(resolve, 200));
       setLoading(false);
@@ -49,11 +49,11 @@ export function Log(props: { opened: boolean }) {
               confirmProps: { color: 'red' },
               onConfirm: async () => {
                 try {
-                  await ClearLog();
+                  await SystemService.ClearLog();
                   notifications.show({ color: 'green', message: `日志清空成功` });
                   fetchData();
                 } catch (error: any) {
-                  notifications.show({ color: 'red', message: error });
+                  notifications.show({ color: 'red', message: error.message });
                 }
               },
             })

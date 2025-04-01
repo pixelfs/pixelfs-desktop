@@ -25,15 +25,6 @@ import { FaRegFileAlt } from 'react-icons/fa';
 import { formatBytes } from 'bytes-formatter';
 import { GrRefresh } from 'react-icons/gr';
 import { IoHomeOutline } from 'react-icons/io5';
-import { v1 } from '../../../wailsjs/go/models';
-import {
-  CopyFile,
-  DownloadFile,
-  GetFileList,
-  MoveFile,
-  RemoveFile,
-  UploadFile,
-} from '../../../wailsjs/go/services/FileService';
 import { CgRename } from 'react-icons/cg';
 import { RiDeleteBinLine, RiDownloadLine } from 'react-icons/ri';
 import { NewDirectory } from './NewDirectory';
@@ -41,9 +32,10 @@ import { RenameFile } from './RenameFile';
 import { notifications } from '@mantine/notifications';
 import { FileTree } from '../Modal';
 import { FileInfo } from './FileInfo';
-import { GetStorageLinks } from '../../../wailsjs/go/services/StorageService';
 import { CreateStorageLink } from '../Modal/CreateStorageLink';
 import { parsePathToContext, truncateText } from '../../utils/common';
+import { FileService, StorageService } from '../../../bindings/github.com/pixelfs/pixelfs-desktop/services';
+import * as v1 from '../../../bindings/github.com/pixelfs/pixelfs/gen/pixelfs/v1';
 
 export function FileManager(props: { location: v1.Location; path: string; onChangePath: (path: string) => void }) {
   const { colorScheme } = useMantineColorScheme();
@@ -67,21 +59,23 @@ export function FileManager(props: { location: v1.Location; path: string; onChan
       setError('');
 
       const files = orderBy(
-        await GetFileList({
-          node_id: props.location.node_id,
-          location: props.location.name,
-          path: props.path,
-        }),
+        (
+          await FileService.GetFileList({
+            node_id: props.location.node_id,
+            location: props.location.name,
+            path: props.path,
+          })
+        ).filter((f) => !!f),
         [(v) => (v.type! <= 3 ? 0 : 1), 'name'],
         ['asc', 'asc'],
       );
 
-      const storageLinks = await GetStorageLinks();
+      const storageLinks = await StorageService.GetStorageLinks();
       setHasStorageLink(
         !isEmpty(
           storageLinks.find(
             (storageLink) =>
-              storageLink.node_id === props.location.node_id || storageLink.location_id === props.location.id,
+              storageLink?.node_id === props.location.node_id || storageLink?.location_id === props.location.id,
           ),
         ),
       );
@@ -89,7 +83,7 @@ export function FileManager(props: { location: v1.Location; path: string; onChan
       setFiles(files ?? []);
       setLoading(false);
     } catch (error: any) {
-      setError(error);
+      setError(error.message);
       setLoading(false);
     }
   };
@@ -179,7 +173,7 @@ export function FileManager(props: { location: v1.Location; path: string; onChan
             destCtx.path = `${destCtx.path}/${selectedFile?.name}`;
             setShowFileTree(false);
 
-            isMove ? await MoveFile(srcCtx, destCtx) : await CopyFile(srcCtx, destCtx);
+            isMove ? await FileService.MoveFile(srcCtx, destCtx) : await FileService.CopyFile(srcCtx, destCtx);
             modals.openConfirmModal({
               title: '提示',
               centered: true,
@@ -189,7 +183,7 @@ export function FileManager(props: { location: v1.Location; path: string; onChan
               labels: { confirm: '确认', cancel: '取消' },
             });
           } catch (error: any) {
-            notifications.show({ color: 'red', message: error });
+            notifications.show({ color: 'red', message: error.message });
           }
         }}
       />
@@ -219,7 +213,11 @@ export function FileManager(props: { location: v1.Location; path: string; onChan
             mx={10}
             onClick={async () => {
               try {
-                await UploadFile({ node_id: props.location.node_id, location: props.location.name, path: props.path });
+                await FileService.UploadFile({
+                  node_id: props.location.node_id,
+                  location: props.location.name,
+                  path: props.path,
+                });
                 modals.openConfirmModal({
                   title: '提示',
                   centered: true,
@@ -227,7 +225,7 @@ export function FileManager(props: { location: v1.Location; path: string; onChan
                   labels: { confirm: '确认', cancel: '取消' },
                 });
               } catch (error: any) {
-                if (error !== 'cancel') notifications.show({ color: 'red', message: error });
+                if (!error.message.include('cancel')) notifications.show({ color: 'red', message: error.message });
               }
             }}
           >
@@ -342,7 +340,7 @@ export function FileManager(props: { location: v1.Location; path: string; onChan
                       leftSection={<RiDownloadLine size={14} />}
                       onClick={async () => {
                         try {
-                          await DownloadFile({
+                          await FileService.DownloadFile({
                             node_id: props.location.node_id,
                             location: props.location.name,
                             path: `${props.path}/${file.name}`,
@@ -355,7 +353,8 @@ export function FileManager(props: { location: v1.Location; path: string; onChan
                             labels: { confirm: '确认', cancel: '取消' },
                           });
                         } catch (error: any) {
-                          if (error !== 'cancel') notifications.show({ color: 'red', message: error });
+                          if (!error.message.include('cancel'))
+                            notifications.show({ color: 'red', message: error.message });
                         }
                       }}
                     >
@@ -373,7 +372,7 @@ export function FileManager(props: { location: v1.Location; path: string; onChan
                           confirmProps: { color: 'red' },
                           onConfirm: async () => {
                             try {
-                              await RemoveFile({
+                              await FileService.RemoveFile({
                                 node_id: props.location.node_id,
                                 location: props.location.name,
                                 path: `${props.path}/${file.name}`,
@@ -389,7 +388,7 @@ export function FileManager(props: { location: v1.Location; path: string; onChan
                               });
                               fetchData();
                             } catch (error: any) {
-                              notifications.show({ color: 'red', message: error });
+                              notifications.show({ color: 'red', message: error.message });
                             }
                           },
                         })

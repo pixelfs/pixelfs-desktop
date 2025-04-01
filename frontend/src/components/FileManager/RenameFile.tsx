@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Box, Button, Code, Group, Input, Modal, Text } from '@mantine/core';
-import { v1 } from '../../../wailsjs/go/models';
-import { MoveFile } from '../../../wailsjs/go/services/FileService';
 import { isEmpty } from 'lodash-es';
 import { notifications } from '@mantine/notifications';
+import { FileService } from '../../../bindings/github.com/pixelfs/pixelfs-desktop/services';
+import * as v1 from '../../../bindings/github.com/pixelfs/pixelfs/gen/pixelfs/v1';
 
 export function RenameFile(props: {
   opened: boolean;
@@ -44,7 +44,7 @@ export function RenameFile(props: {
               try {
                 setSaveLoading(true);
 
-                await MoveFile(
+                await FileService.MoveFile(
                   {
                     node_id: props.location.node_id,
                     location: props.location.name,
@@ -70,7 +70,7 @@ export function RenameFile(props: {
                 props.onCreated();
               } catch (error: any) {
                 setSaveLoading(false);
-                notifications.show({ color: 'red', message: error });
+                notifications.show({ color: 'red', message: error.message });
               }
             }}
           >

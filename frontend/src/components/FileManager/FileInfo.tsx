@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { Box, Button, Group, Modal, Table, Text } from '@mantine/core';
-import { v1 } from '../../../wailsjs/go/models';
 import { formatBytes } from 'bytes-formatter';
-import { DownloadFile, PlayVideo } from '../../../wailsjs/go/services/FileService';
 import { isVideo } from '../../utils/common';
 import { notifications } from '@mantine/notifications';
+import { FileService } from '../../../bindings/github.com/pixelfs/pixelfs-desktop/services';
+import * as v1 from '../../../bindings/github.com/pixelfs/pixelfs/gen/pixelfs/v1';
 
 export function FileInfo(props: {
   opened: boolean;
@@ -39,7 +39,7 @@ export function FileInfo(props: {
           <Button
             variant="default"
             onClick={async () => {
-              await DownloadFile({
+              await FileService.DownloadFile({
                 node_id: props.location.node_id,
                 location: props.location.name,
                 path: `${props.path}/${props.file?.name}`,
@@ -58,7 +58,7 @@ export function FileInfo(props: {
                 setPlayLoading(true);
 
                 try {
-                  await PlayVideo({
+                  await FileService.PlayVideo({
                     node_id: props.location.node_id,
                     location: props.location.name,
                     path: `${props.path}/${props.file?.name}`,
@@ -67,7 +67,7 @@ export function FileInfo(props: {
                   setPlayLoading(false);
                 } catch (error: any) {
                   setPlayLoading(false);
-                  notifications.show({ color: 'red', message: <Text lineClamp={8}>{error}</Text> });
+                  notifications.show({ color: 'red', message: <Text lineClamp={8}>{error.message}</Text> });
                 }
 
                 props.onClose();

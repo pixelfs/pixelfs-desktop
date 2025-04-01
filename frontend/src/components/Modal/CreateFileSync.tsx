@@ -3,12 +3,11 @@ import { useForm } from '@mantine/form';
 import { isEmpty, merge } from 'lodash-es';
 import { useEffect, useState } from 'react';
 import { notifications } from '@mantine/notifications';
-import { v1 } from '../../../wailsjs/go/models';
 import { parsePathToContext } from '../../utils/common';
 import { FileTree } from './FileTree';
-import { StatFile } from '../../../wailsjs/go/services/FileService';
-import { AddFileSync, StartFileSync } from '../../../wailsjs/go/services/FileSyncService';
 import { modals } from '@mantine/modals';
+import { FileSyncService, FileService } from '../../../bindings/github.com/pixelfs/pixelfs-desktop/services';
+import * as v1 from '../../../bindings/github.com/pixelfs/pixelfs/gen/pixelfs/v1';
 
 export function CreateFileSync(props: { opened: boolean; onClose: () => void; onCreated: () => void; sync?: v1.Sync }) {
   const [saveLoading, setSaveLoading] = useState<boolean>(false);
@@ -114,8 +113,8 @@ export function CreateFileSync(props: { opened: boolean; onClose: () => void; on
                   try {
                     setSaveLoading(true);
 
-                    const srcFile = await StatFile(parsePathToContext(values.src));
-                    if (!(srcFile.type === 2 || srcFile.type === 3)) {
+                    const srcFile = await FileService.StatFile(parsePathToContext(values.src));
+                    if (!(srcFile?.type === 2 || srcFile?.type === 3)) {
                       notifications.show({
                         color: 'red',
                         message: (
@@ -127,8 +126,8 @@ export function CreateFileSync(props: { opened: boolean; onClose: () => void; on
                       return;
                     }
 
-                    const destFile = await StatFile(parsePathToContext(values.dest));
-                    if (!(destFile.type === 2 || destFile.type === 3)) {
+                    const destFile = await FileService.StatFile(parsePathToContext(values.dest));
+                    if (!(destFile?.type === 2 || destFile?.type === 3)) {
                       notifications.show({
                         color: 'red',
                         message: (
@@ -140,7 +139,7 @@ export function CreateFileSync(props: { opened: boolean; onClose: () => void; on
                       return;
                     }
 
-                    const sync = await AddFileSync(
+                    const sync = await FileSyncService.AddFileSync(
                       v1.Sync.createFrom({
                         id: props.sync?.id,
                         name: values.name,
@@ -156,7 +155,7 @@ export function CreateFileSync(props: { opened: boolean; onClose: () => void; on
                       }),
                     );
 
-                    await StartFileSync(sync);
+                    await FileSyncService.StartFileSync(sync);
                     notifications.show({
                       color: 'green',
                       message: (
@@ -172,7 +171,7 @@ export function CreateFileSync(props: { opened: boolean; onClose: () => void; on
                     setSaveLoading(false);
                     notifications.show({
                       color: 'red',
-                      message: <Text size="sm">请检查填写的信息是否正确，{error}</Text>,
+                      message: <Text size="sm">请检查填写的信息是否正确，{error.message}</Text>,
                     });
                   }
                 },

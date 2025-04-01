@@ -16,10 +16,9 @@ import {
 import { isEmpty } from 'lodash-es';
 import { FaFolder, FaFolderOpen } from 'react-icons/fa';
 import { useEffect, useState } from 'react';
-import { GetFileList, Mkdir } from '../../../wailsjs/go/services/FileService';
 import { parsePathToContext } from '../../utils/common';
 import { notifications } from '@mantine/notifications';
-import { GetNodes } from '../../../wailsjs/go/services/NodeService';
+import { FileService, NodeService } from '../../../bindings/github.com/pixelfs/pixelfs-desktop/services';
 
 function NewDirectory(props: { opened: boolean; onClose: () => void; onCreated: (fileName: string) => void }) {
   const [value, setValue] = useState('');
@@ -72,7 +71,7 @@ export function FileTree(props: {
       if (loadedPaths.has(value)) return;
 
       try {
-        const files = await GetFileList(parsePathToContext(value));
+        const files = (await FileService.GetFileList(parsePathToContext(value))).filter((f) => !!f);
         if (isEmpty(files)) return;
 
         const dirs = files.filter((file) => file.type! <= 3);
@@ -87,7 +86,7 @@ export function FileTree(props: {
 
         setLoadedPaths((prev) => new Set(prev).add(value));
       } catch (error: any) {
-        notifications.show({ color: 'red', message: error });
+        notifications.show({ color: 'red', message: error.message });
       }
     },
   });
@@ -99,12 +98,12 @@ export function FileTree(props: {
       setLoadedPaths(new Set());
       tree.collapseAllNodes();
 
-      const nodes = await GetNodes();
-      setData(nodes.map((node) => ({ label: `${node.name?.toLowerCase()}(${node.id})`, value: node.id! })));
+      const nodes = await NodeService.GetNodes();
+      setData(nodes.map((node) => ({ label: `${node!.name?.toLowerCase()}(${node!.id})`, value: node!.id! })));
       setLoading(false);
     } catch (error: any) {
       setLoading(false);
-      notifications.show({ color: 'red', message: error });
+      notifications.show({ color: 'red', message: error.message });
     }
   };
 
@@ -125,7 +124,7 @@ export function FileTree(props: {
             }
 
             const newFolderPath = `${selected}/${fileName}`;
-            await Mkdir(parsePathToContext(newFolderPath));
+            await FileService.Mkdir(parsePathToContext(newFolderPath));
             notifications.show({
               color: 'green',
               message: (

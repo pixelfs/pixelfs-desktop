@@ -1,16 +1,12 @@
 import { isEmpty } from 'lodash-es';
 import { ActionIcon, Button, Center, Group, Loader, Table, Text, Tooltip, useMantineColorScheme } from '@mantine/core';
-import { services } from '../../../../wailsjs/go/models';
-import {
-  GetTransportManagers,
-  DeleteTransportManager,
-  DeleteTransportManagerByType,
-} from '../../../../wailsjs/go/services/DatabaseService';
 import { useEffect, useState } from 'react';
 import { RiDeleteBinLine } from 'react-icons/ri';
 import { GrRefresh } from 'react-icons/gr';
 import { modals } from '@mantine/modals';
 import { notifications } from '@mantine/notifications';
+import { DatabaseService } from '../../../../bindings/github.com/pixelfs/pixelfs-desktop/services';
+import * as services from '../../../../bindings/github.com/pixelfs/pixelfs-desktop/services';
 
 export function Copy(props: { opened: boolean }) {
   const { colorScheme } = useMantineColorScheme();
@@ -20,7 +16,7 @@ export function Copy(props: { opened: boolean }) {
   const fetchData = async () => {
     try {
       setLoading(true);
-      setCopyList(await GetTransportManagers('copy'));
+      setCopyList((await DatabaseService.GetTransportManagers('copy')).filter((t) => !!t));
       setLoading(false);
     } catch (e) {
       setLoading(false);
@@ -61,10 +57,10 @@ export function Copy(props: { opened: boolean }) {
               confirmProps: { color: 'red' },
               onConfirm: async () => {
                 try {
-                  await DeleteTransportManagerByType('copy');
+                  await DatabaseService.DeleteTransportManagerByType('copy');
                   fetchData();
                 } catch (error: any) {
-                  notifications.show({ color: 'red', message: error });
+                  notifications.show({ color: 'red', message: error.message });
                 }
               },
             })
@@ -113,7 +109,7 @@ export function Copy(props: { opened: boolean }) {
                   variant="transparent"
                   size={17}
                   onClick={async () => {
-                    await DeleteTransportManager(copy.ID);
+                    await DatabaseService.DeleteTransportManager(copy.ID);
                     fetchData();
                   }}
                 >

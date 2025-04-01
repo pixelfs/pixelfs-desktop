@@ -15,19 +15,12 @@ import { useEffect, useState } from 'react';
 import { RiDeleteBinLine, RiEditLine, RiPlayCircleLine, RiStopCircleLine } from 'react-icons/ri';
 import { GrRefresh } from 'react-icons/gr';
 import { FiMoreHorizontal } from 'react-icons/fi';
-import { GetNodes } from '../../../../wailsjs/go/services/NodeService';
-import {
-  GetFileSyncList,
-  AddFileSync,
-  StartFileSync,
-  StopFileSync,
-  RemoveFileSync,
-} from '../../../../wailsjs/go/services/FileSyncService';
 import { isEmpty } from 'lodash-es';
-import { v1 } from '../../../../wailsjs/go/models';
 import { notifications } from '@mantine/notifications';
 import { modals } from '@mantine/modals';
 import { CreateFileSync } from '../CreateFileSync';
+import { FileSyncService, NodeService } from '../../../../bindings/github.com/pixelfs/pixelfs-desktop/services';
+import * as v1 from '../../../../bindings/github.com/pixelfs/pixelfs/gen/pixelfs/v1';
 
 function formatFileSyncStatus(status?: number): string {
   switch (status) {
@@ -66,7 +59,6 @@ export function FileSync(props: { opened: boolean }) {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>('');
   const [showCreateFileSync, setShowCreateFileSync] = useState<boolean>(false);
-  const [showFileSyncInfo, setShowFileSyncInfo] = useState<boolean>(false);
   const [selectedFileSync, setSelectedFileSync] = useState<v1.Sync>();
   const [fileSyncList, setFileSyncList] = useState<
     Array<
@@ -82,11 +74,11 @@ export function FileSync(props: { opened: boolean }) {
       setError('');
       setLoading(true);
 
-      const nodeList = await GetNodes();
-      const fileSyncList = ((await GetFileSyncList()) ?? []).map((fileSync) => ({
+      const nodeList = await NodeService.GetNodes();
+      const fileSyncList = ((await FileSyncService.GetFileSyncList()) ?? []).map((fileSync) => ({
         ...fileSync,
-        srcNode: nodeList.find((node) => node.id === fileSync.src_node_id),
-        destNode: nodeList.find((node) => node.id === fileSync.dest_node_id),
+        srcNode: nodeList.find((node) => node?.id === fileSync?.src_node_id),
+        destNode: nodeList.find((node) => node?.id === fileSync?.dest_node_id),
       }));
 
       setFileSyncList(fileSyncList as any);
@@ -227,13 +219,13 @@ export function FileSync(props: { opened: boolean }) {
                             onConfirm: async () => {
                               try {
                                 sync.enabled = true;
-                                await AddFileSync(sync);
-                                await StartFileSync(sync);
+                                await FileSyncService.AddFileSync(sync);
+                                await FileSyncService.StartFileSync(sync);
 
                                 await fetchData();
                                 notifications.show({ color: 'green', message: '文件同步开启成功' });
                               } catch (error: any) {
-                                notifications.show({ color: 'red', message: error });
+                                notifications.show({ color: 'red', message: error.message });
                               }
                             },
                           });
@@ -259,13 +251,13 @@ export function FileSync(props: { opened: boolean }) {
                             onConfirm: async () => {
                               try {
                                 sync.enabled = false;
-                                await AddFileSync(sync);
-                                await StopFileSync(sync);
+                                await FileSyncService.AddFileSync(sync);
+                                await FileSyncService.StopFileSync(sync);
 
                                 await fetchData();
                                 notifications.show({ color: 'green', message: '文件同步关闭成功' });
                               } catch (error: any) {
-                                notifications.show({ color: 'red', message: error });
+                                notifications.show({ color: 'red', message: error.message });
                               }
                             },
                           })
@@ -302,12 +294,12 @@ export function FileSync(props: { opened: boolean }) {
                             confirmProps: { color: 'red' },
                             onConfirm: async () => {
                               try {
-                                await StopFileSync(sync);
-                                await RemoveFileSync(sync.id!);
+                                await FileSyncService.StopFileSync(sync);
+                                await FileSyncService.RemoveFileSync(sync.id!);
                                 await fetchData();
                                 notifications.show({ color: 'green', message: '文件同步删除成功' });
                               } catch (error: any) {
-                                notifications.show({ color: 'red', message: error });
+                                notifications.show({ color: 'red', message: error.message });
                               }
                             },
                           })

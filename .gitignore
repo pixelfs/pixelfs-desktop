@@ -12,10 +12,13 @@
 *.out
 
 # Dependency directories (remove the comment below to include it)
+bin
+.task
 vendor/
-build/bin
-node_modules
 frontend/dist
+frontend/node_modules
+build/linux/appimage/build
+build/windows/nsis/MicrosoftEdgeWebview2Setup.exe
 
 dist/
 daemon.yaml

@@ -14,12 +14,12 @@ import {
 import { useEffect, useState } from 'react';
 import { RiDeleteBinLine } from 'react-icons/ri';
 import { GrRefresh } from 'react-icons/gr';
-import { GetStorages, RemoveStorage } from '../../../../wailsjs/go/services/StorageService';
-import { v1 } from '../../../../wailsjs/go/models';
 import { notifications } from '@mantine/notifications';
 import { CreateStorage } from '../CreateStorage';
 import { StorageInfo } from './StorageInfo';
 import { modals } from '@mantine/modals';
+import { StorageService } from '../../../../bindings/github.com/pixelfs/pixelfs-desktop/services';
+import * as v1 from '../../../../bindings/github.com/pixelfs/pixelfs/gen/pixelfs/v1';
 
 export function Storage(props: { opened: boolean }) {
   const { colorScheme } = useMantineColorScheme();
@@ -35,10 +35,10 @@ export function Storage(props: { opened: boolean }) {
       setError('');
       setLoading(true);
 
-      setStorageList(await GetStorages());
+      setStorageList((await StorageService.GetStorages()).filter((s) => !!s));
       setLoading(false);
     } catch (error: any) {
-      setError(error);
+      setError(error.message);
       setLoading(false);
     }
   };
@@ -117,7 +117,7 @@ export function Storage(props: { opened: boolean }) {
                 key={storage.id}
                 style={{ cursor: 'pointer' }}
                 onClick={() => {
-                  setSelectedStorage(storage);
+                  setSelectedStorage(storage!);
                   setShowStorageInfo(true);
                 }}
               >
@@ -151,7 +151,7 @@ export function Storage(props: { opened: boolean }) {
                         confirmProps: { color: 'red' },
                         onConfirm: async () => {
                           try {
-                            await RemoveStorage(storage.id!);
+                            await StorageService.RemoveStorage(storage.id!);
                             notifications.show({
                               color: 'green',
                               message: (
@@ -163,7 +163,7 @@ export function Storage(props: { opened: boolean }) {
 
                             fetchData();
                           } catch (error: any) {
-                            notifications.show({ color: 'red', message: error });
+                            notifications.show({ color: 'red', message: error.message });
                           }
                         },
                       });

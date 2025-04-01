@@ -2,10 +2,9 @@ import { Box, Button, Code, Group, Modal, NativeSelect, NumberInput, Text, TextI
 import { useForm } from '@mantine/form';
 import { isEmpty } from 'lodash-es';
 import { useEffect, useState } from 'react';
-import { v1 } from '../../../wailsjs/go/models';
-import { AddLocation } from '../../../wailsjs/go/services/LocationService';
 import { notifications } from '@mantine/notifications';
-import { FormatBytes } from '../../../wailsjs/go/services/SystemService';
+import { LocationService, UtilService } from '../../../bindings/github.com/pixelfs/pixelfs-desktop/services';
+import * as v1 from '../../../bindings/github.com/pixelfs/pixelfs/gen/pixelfs/v1';
 
 export function CreateLocation(props: {
   opened: boolean;
@@ -42,7 +41,7 @@ export function CreateLocation(props: {
       form.setValues({
         name: props.location.name ?? '',
         path: props.location.path ?? '',
-        blockSize: props.location.block_size ? await FormatBytes(props.location.block_size) : '4MB',
+        blockSize: props.location.block_size ? await UtilService.FormatBytes(props.location.block_size) : '4MB',
         blockDuration: props.location.block_duration ?? 20,
       });
     };
@@ -63,7 +62,13 @@ export function CreateLocation(props: {
           onSubmit={form.onSubmit(async (values) => {
             try {
               setSaveLoading(true);
-              await AddLocation(nodeId, values.name, values.path, values.blockSize, values.blockDuration);
+              await LocationService.AddLocation(
+                nodeId,
+                values.name,
+                values.path,
+                values.blockSize,
+                values.blockDuration,
+              );
 
               notifications.show({
                 color: 'green',
@@ -78,7 +83,7 @@ export function CreateLocation(props: {
               setSaveLoading(false);
             } catch (error: any) {
               setSaveLoading(false);
-              notifications.show({ color: 'red', message: error });
+              notifications.show({ color: 'red', message: error.message });
             }
           })}
         >

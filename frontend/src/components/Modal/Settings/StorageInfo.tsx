@@ -1,6 +1,7 @@
 import { Box, Modal, Table, Text } from '@mantine/core';
-import { v1 } from '../../../../wailsjs/go/models';
+
 import { useEffect, useState } from 'react';
+import * as v1 from '../../../../bindings/github.com/pixelfs/pixelfs/gen/pixelfs/v1';
 
 export function StorageInfo(props: { opened: boolean; storage?: v1.Storage; onClose: () => void }) {
   const [config, setConfig] = useState<v1.StorageS3Config>();
