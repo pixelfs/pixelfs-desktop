@@ -5,7 +5,7 @@ info:
   productName: "PixelFS"
   productIdentifier: "io.pixelfs.desktop"
   description: "A cross-device file system, Transfer files based on s3-protocol"
-  copyright: "Copyright © 2025"
+  copyright: "Copyright © 2025, PixelFS.IO"
   comments: ""
   version: "v1.0.0"
 

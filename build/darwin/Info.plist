@@ -22,6 +22,6 @@
         <key>NSHighResolutionCapable</key>
         <string>true</string>
         <key>NSHumanReadableCopyright</key>
-        <string>Copyright © 2025</string>
+        <string>Copyright © 2025, PixelFS.IO</string>
     </dict>
 </plist>

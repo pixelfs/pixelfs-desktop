@@ -16,8 +16,8 @@ import (
 //go:embed all:frontend/dist
 var assets embed.FS
 
-//go:embed build/windows/icons.ico
-var winIcon []byte
+//go:embed build/darwin/icons.icns
+var darwinIcon []byte
 
 const appName = "PixelFS"
 
@@ -51,7 +51,7 @@ func main() {
 		Title:       appName,
 		Width:       1200,
 		Height:      768,
-		AlwaysOnTop: true,
+		AlwaysOnTop: false,
 		Hidden:      false,
 		Mac: application.MacWindow{
 			Backdrop: application.MacBackdropTranslucent,
@@ -74,6 +74,7 @@ func main() {
 		e.Cancel()
 	})
 
+	systray := app.NewSystemTray()
 	menu := application.NewMenu()
 	menu.Add("打开应用").OnClick(func(ctx *application.Context) {
 		if runtime.GOOS == "darwin" {
@@ -86,9 +87,12 @@ func main() {
 	menu.AddSeparator()
 	menu.Add("退出").OnClick(func(ctx *application.Context) { app.Quit() })
 
-	systray := app.NewSystemTray()
-	systray.SetIcon(winIcon)
 	systray.SetMenu(menu)
+	if runtime.GOOS == "windows" {
+		systray.OnClick(func() { window.Show() })
+	} else {
+		systray.SetIcon(darwinIcon)
+	}
 
 	if err := app.Run(); err != nil {
 		log.Fatal().Err(err)
