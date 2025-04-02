@@ -3,26 +3,26 @@
 #
 # The lines below are called `modelines`. See `:help modeline`
 
-name: "pixelfs-desktop"
+name: "pixelfs"
 arch: ${GOARCH}
 platform: "linux"
-version: "0.1.0"
+version: "1.0.0"
 section: "default"
 priority: "extra"
 maintainer: ${GIT_COMMITTER_NAME} <${GIT_COMMITTER_EMAIL}>
-description: "My Product Description"
-vendor: "My Company"
-homepage: "https://wails.io"
+description: "A cross-device file system, Transfer files based on s3-protocol."
+vendor: "PixelFS.IO"
+homepage: "https://pixelfs.io"
 license: "MIT"
 release: "1"
 
 contents:
-  - src: "./bin/pixelfs-desktop"
-    dst: "/usr/local/bin/pixelfs-desktop"
+  - src: "./bin/pixelfs"
+    dst: "/usr/local/bin/pixelfs"
   - src: "./build/appicon.png"
-    dst: "/usr/share/icons/hicolor/128x128/apps/pixelfs-desktop.png"
-  - src: "./build/linux/pixelfs-desktop.desktop"
-    dst: "/usr/share/applications/pixelfs-desktop.desktop"
+    dst: "/usr/share/icons/hicolor/128x128/apps/pixelfs.png"
+  - src: "./build/linux/pixelfs.desktop"
+    dst: "/usr/share/applications/pixelfs.desktop"
 
 depends:
   - gtk3

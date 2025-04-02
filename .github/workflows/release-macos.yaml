@@ -50,7 +50,7 @@ jobs:
 
       - name: Install wails
         shell: bash
-        run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.10.1
+        run: go install github.com/wailsapp/wails/v3/cmd/wails3@latest
 
       - name: Setup Node
         uses: actions/setup-node@v3
@@ -59,11 +59,9 @@ jobs:
 
       - name: Build frontend assets
         shell: bash
+        working-directory: ./frontend
         run: |
-          npm install -g pnpm@9
-          jq '.info.productVersion = "${{ steps.normalise_version.outputs.version }}"' wails.json > tmp.json
-          mv tmp.json wails.json
-          cd frontend
+          npm install -g pnpm@10
           jq '.version = "${{ steps.normalise_version.outputs.version }}"' package.json > tmp.json
           mv tmp.json package.json
           pnpm install
@@ -71,8 +69,7 @@ jobs:
       - name: Build wails app for macOS
         shell: bash
         run: |
-          CGO_ENABLED=1 wails build -platform ${{ matrix.platform }} \
-          -ldflags "-X main.version=${{ steps.normalise_version.outputs.version }}"
+          CGO_ENABLED=1 wails3 package
 
       - name: Checkout create-image
         uses: actions/checkout@v2
@@ -83,13 +80,12 @@ jobs:
 
       - name: Build macOS DMG
         shell: bash
-        working-directory: ./build
         run: |
-          ./create-dmg/create-dmg \
+          ./build/create-dmg/create-dmg \
             --no-internet-enable \
             --volname "PixelFS" \
-            --volicon "bin/PixelFS.app/Contents/Resources/iconfile.icns" \
-            --background "dmg/background.tiff" \
+            --volicon "build/darwin/icons.icns" \
+            --background "build/dmg/background.tiff" \
             --text-size 12 \
             --window-pos 400 400 \
             --window-size 660 450 \
@@ -97,18 +93,18 @@ jobs:
             --icon "PixelFS.app" 180 180 \
             --hide-extension "PixelFS.app" \
             --app-drop-link 480 180 \
-            --add-file "Repair" "dmg/fix-app" 230 290 \
-            --add-file "损坏修复" "dmg/fix-app_zh" 430 290 \
+            --add-file "Repair" "build/dmg/fix-app" 230 290 \
+            --add-file "损坏修复" "build/dmg/fix-app_zh" 430 290 \
             "bin/PixelFS-${{ steps.normalise_platform.outputs.tag }}.dmg" \
             "bin"
 
       - name: Rename dmg
-        working-directory: ./build/bin
+        working-directory: ./bin
         run: mv "PixelFS-${{ steps.normalise_platform.outputs.tag }}.dmg" "PixelFS_${{ steps.normalise_version.outputs.version }}_${{ steps.normalise_platform.outputs.tag }}.dmg"
 
       - name: Upload release asset (DMG Package)
         uses: softprops/action-gh-release@v1
         with:
           tag_name: v${{ steps.normalise_version.outputs.version }}
-          files: ./build/bin/PixelFS_${{ steps.normalise_version.outputs.version }}_${{ steps.normalise_platform.outputs.tag }}.dmg
+          files: ./bin/PixelFS_${{ steps.normalise_version.outputs.version }}_${{ steps.normalise_platform.outputs.tag }}.dmg
           token: ${{ secrets.GH_PAT_TOKEN }}

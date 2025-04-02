@@ -57,9 +57,6 @@ func main() {
 			Backdrop: application.MacBackdropTranslucent,
 			TitleBar: application.MacTitleBarHidden,
 		},
-		Windows: application.WindowsWindow{
-			HiddenOnTaskbar: true,
-		},
 		BackgroundColour: application.NewRGB(255, 255, 255),
 		URL:              "/",
 	})

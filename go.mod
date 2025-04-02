@@ -4,7 +4,7 @@ go 1.23
 
 require (
 	connectrpc.com/connect v1.18.1
-	github.com/pixelfs/pixelfs v1.1.3
+	github.com/pixelfs/pixelfs v1.1.4
 	github.com/rs/zerolog v1.33.0
 	github.com/tidwall/gjson v1.18.0
 	github.com/tidwall/sjson v1.2.5

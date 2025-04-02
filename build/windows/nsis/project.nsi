@@ -6,7 +6,7 @@ Unicode true
 ## If the keyword is not defined, "wails_tools.nsh" will populate them.
 ## If they are defined here, "wails_tools.nsh" will not touch them. This allows you to use this project.nsi manually
 ## from outside of Wails for debugging and development of the installer.
-## 
+##
 ## For development first make a wails nsis build to populate the "wails_tools.nsh":
 ## > wails build --target windows/amd64 --nsis
 ## Then you can call makensis on this file with specifying the path to your binary:
@@ -50,8 +50,8 @@ ManifestDPIAware true
 
 !include "MUI.nsh"
 
-!define MUI_ICON "..\icon.ico"
-!define MUI_UNICON "..\icon.ico"
+!define MUI_ICON "..\icons.ico"
+!define MUI_UNICON "..\icons.ico"
 # !define MUI_WELCOMEFINISHPAGE_BITMAP "resources\leftimage.bmp" #Include this to add a bitmap on the left side of the Welcome Page. Must be a size of 164x314
 !define MUI_FINISHPAGE_NOAUTOCLOSE # Wait on the INSTFILES page so the user can take a look into the details of the installation steps
 !define MUI_ABORTWARNING # This will warn the user if they exit from the installer.
@@ -85,7 +85,7 @@ Section
     !insertmacro wails.webview2runtime
 
     SetOutPath $INSTDIR
-    
+
     !insertmacro wails.files
 
     CreateShortcut "$SMPROGRAMS\${INFO_PRODUCTNAME}.lnk" "$INSTDIR\${PRODUCT_EXECUTABLE}"
@@ -96,7 +96,7 @@ Section
     !insertmacro wails.writeUninstaller
 SectionEnd
 
-Section "uninstall" 
+Section "uninstall"
     !insertmacro wails.setShellContext
 
     RMDir /r "$AppData\${PRODUCT_EXECUTABLE}" # Remove the WebView2 DataPath

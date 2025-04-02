@@ -5,8 +5,8 @@
 	"info": {
 		"0000": {
 			"ProductVersion": "1.0.0",
-			"CompanyName": "PixelFS",
-			"FileDescription": "A cross-device file system, Transfer files based on s3-protocol",
+			"CompanyName": "PixelFS.IO",
+			"FileDescription": "PixelFS",
 			"LegalCopyright": "Copyright © 2025, PixelFS.IO",
 			"ProductName": "PixelFS",
 			"Comments": ""

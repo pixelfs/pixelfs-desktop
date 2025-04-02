@@ -28,8 +28,12 @@ type downloadBlockResult struct {
 	err   error
 }
 
-var file *FileService
-var onceFile sync.Once
+var (
+	tmpPrefix = ".pixelfstmp."
+
+	file     *FileService
+	onceFile sync.Once
+)
 
 func NewFileService() *FileService {
 	if file == nil {
@@ -145,7 +149,7 @@ func (f *FileService) CopyFile(src *pb.FileContext, dest *pb.FileContext) error 
 	return nil
 }
 
-func (f *FileService) copyFile(src *pb.FileContext, dest *pb.FileContext) error {
+func (f *FileService) copyFile(src *pb.FileContext, dest *pb.FileContext) (err error) {
 	if src.NodeId == dest.NodeId {
 		copyModel := TransportManager{
 			Type:     "copy",
@@ -232,6 +236,27 @@ func (f *FileService) copyFile(src *pb.FileContext, dest *pb.FileContext) error 
 
 		return nil
 	}
+
+	destFileDir, destFileName := filepath.Split(dest.Path)
+	dest.Path = filepath.ToSlash(filepath.Join(destFileDir, tmpPrefix+destFileName))
+
+	defer func() {
+		if err == nil {
+			_, err = rpc.FileSystemService.Move(
+				context.Background(),
+				connect.NewRequest(&pb.FileMoveRequest{
+					Src: dest,
+					Dest: &pb.FileContext{
+						NodeId:   dest.NodeId,
+						Location: dest.Location,
+						Path:     filepath.ToSlash(filepath.Join(destFileDir, destFileName)),
+					},
+				}),
+			)
+		} else {
+			_ = f.RemoveFile(dest)
+		}
+	}()
 
 	locationRsp, err := rpc.LocationService.GetLocationByContext(
 		context.Background(),
@@ -569,7 +594,7 @@ func (f *FileService) UploadFile(ctx *pb.FileContext) error {
 	}
 
 	_, fileName := filepath.Split(inputFilePath)
-	ctx.Path = filepath.Join(ctx.Path, fileName)
+	ctx.Path = filepath.ToSlash(filepath.Join(ctx.Path, fileName))
 
 	uploadModel := TransportManager{
 		Type:     "upload",
@@ -594,7 +619,28 @@ func (f *FileService) UploadFile(ctx *pb.FileContext) error {
 	return nil
 }
 
-func (f *FileService) uploadFile(ctx *pb.FileContext, inputFilePath string, uploadModel *TransportManager) error {
+func (f *FileService) uploadFile(ctx *pb.FileContext, inputFilePath string, uploadModel *TransportManager) (err error) {
+	fileDir, fileName := filepath.Split(ctx.Path)
+	ctx.Path = filepath.ToSlash(filepath.Join(fileDir, tmpPrefix+fileName))
+
+	defer func() {
+		if err == nil {
+			_, err = rpc.FileSystemService.Move(
+				context.Background(),
+				connect.NewRequest(&pb.FileMoveRequest{
+					Src: ctx,
+					Dest: &pb.FileContext{
+						NodeId:   ctx.NodeId,
+						Location: ctx.Location,
+						Path:     filepath.ToSlash(filepath.Join(fileDir, fileName)),
+					},
+				}),
+			)
+		} else {
+			_ = f.RemoveFile(ctx)
+		}
+	}()
+
 	locationRsp, err := rpc.LocationService.GetLocationByContext(
 		context.Background(),
 		connect.NewRequest(&pb.GetLocationByContextRequest{
