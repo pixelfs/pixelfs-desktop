@@ -4,6 +4,7 @@ import (
 	"embed"
 	"os"
 	"runtime"
+	"strings"
 
 	"github.com/pixelfs/pixelfs-desktop/services"
 	"github.com/pixelfs/pixelfs/config"
@@ -122,4 +123,13 @@ func init() {
 
 	log.SetLoggerColors()
 	zerolog.SetGlobalLevel(logLevel)
+
+	// hack for homebrew ffmpeg
+	if runtime.GOOS == "darwin" {
+		path := os.Getenv("PATH")
+		homebrewBin := "/opt/homebrew/bin"
+		if !strings.Contains(path, homebrewBin) {
+			_ = os.Setenv("PATH", path+":"+homebrewBin)
+		}
+	}
 }
