@@ -6,12 +6,12 @@
 name: "pixelfs"
 arch: ${GOARCH}
 platform: "linux"
-version: "1.0.0"
+version: "1.1.0"
 section: "default"
 priority: "extra"
 maintainer: ${GIT_COMMITTER_NAME} <${GIT_COMMITTER_EMAIL}>
 description: "A cross-device file system, Transfer files based on s3-protocol."
-vendor: "PixelFS.IO"
+vendor: "PixelFS"
 homepage: "https://pixelfs.io"
 license: "MIT"
 release: "1"

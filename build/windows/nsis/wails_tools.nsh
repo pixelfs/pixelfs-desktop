@@ -8,13 +8,13 @@
     !define INFO_PROJECTNAME "PixelFS"
 !endif
 !ifndef INFO_COMPANYNAME
-    !define INFO_COMPANYNAME "PixelFS.IO"
+    !define INFO_COMPANYNAME "PixelFS"
 !endif
 !ifndef INFO_PRODUCTNAME
     !define INFO_PRODUCTNAME "PixelFS"
 !endif
 !ifndef INFO_PRODUCTVERSION
-    !define INFO_PRODUCTVERSION "1.0.0"
+    !define INFO_PRODUCTVERSION "1.1.0"
 !endif
 !ifndef INFO_COPYRIGHT
     !define INFO_COPYRIGHT "Copyright © 2025, PixelFS.IO"
